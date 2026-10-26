@@ -6,7 +6,7 @@ import { cpSync, rmSync, mkdirSync } from 'node:fs';
 
 const web = process.argv.includes('--web');
 const out = web ? 'dist' : 'www';
-const FILES = ['index.html', 'style.css', 'game.js', 'tiles.js', 'tutorial.js', 'leaderboard.js', 'manifest.webmanifest', 'fonts', 'icons'];
+const FILES = ['index.html', 'style.css', 'game.js', 'tiles.js', 'tutorial.js', 'leaderboard.js', 'privacy.html', 'manifest.webmanifest', 'fonts', 'icons'];
 if (web) FILES.push('sw.js');
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out);

@@ -39,8 +39,44 @@ stay private.
 - After a game ends, players type a name once and tap **Post**. After that,
   every finished game is posted automatically.
 - Each phone appears once on the board, with its best score.
-- The 🏆 button next to the sound button shows the top 15.
+- The 🏆 button shows the top 15, for **Everyone** or for a friend group.
 - Scores made offline are posted the next time the game is online.
-- Players can't edit or delete other people's scores. You can, in Supabase
-  under **Table Editor → scores**, for example to remove a fake score or a
-  rude name.
+- Players can remove their own name and score from the leaderboard screen.
+  They can't edit or delete other people's scores. You can, in Supabase under
+  **Table Editor → scores**.
+- The privacy policy is `privacy.html` (https://fruitpicnic.io/privacy.html).
+  It's linked from Settings, the leaderboard and the name box.
+
+## Updating the database
+
+When `supabase/leaderboard.sql` changes, run the whole file again in the SQL
+Editor (step 2). It keeps all existing scores. Run it **before** publishing the
+new version of the game, because the new game uses the new functions.
+
+## Friend groups
+
+- **＋ Groups** on the leaderboard lets players start a group (they get a code
+  like `PLUM-4827` to share) or join one by typing a code.
+- Invite links look like `https://fruitpicnic.io/?join=PLUM-4827`. They open the
+  website and offer to join. In the iPhone app players type the code instead.
+- Each group shows only its members' best scores. A group with no members left
+  is deleted. Groups are in **Table Editor → groups** and **group_members**.
+
+## Keeping names friendly
+
+- Names must be 2–20 characters: letters, numbers, spaces and `. - _ '`. No
+  links. Group names follow the same rules, up to 24 characters.
+- Names are checked against **Table Editor → blocked_words**. Add a word there
+  to block it (lowercase letters only):
+  - `part` blocks it anywhere, even split up or disguised (`f.u.c.k`, `sh1t`).
+  - `word` blocks it only as a whole word. Use this for short words that hide
+    inside normal names, like `ass` in "Cassie".
+- Players can tap a name to **Hide this player** (only on their phone) or
+  **Report name**. A name reported by two different players shows as
+  "Picnic Player" for everyone.
+- **Reviewing reports:** open **Table Editor → reports** to see which names were
+  reported (the `target` matches `public_id` in **scores**). In **scores**:
+  - The name is fine: set `hidden` back to `false` and delete its rows in
+    **reports**.
+  - The name isn't OK: leave it hidden, or delete the row.
+  - A player who changes their name gets a fresh start automatically.
