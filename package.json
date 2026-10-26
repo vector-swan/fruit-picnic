@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build-www.mjs",
     "ios": "npm run build && cap sync ios && cap open ios",
-    "sync": "npm run build && cap sync ios"
+    "sync": "npm run build && cap sync ios",
+    "build:web": "node scripts/build-www.mjs --web"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.3",
