@@ -15,21 +15,26 @@ The website at https://fruitpicnic.io keeps working as before.
 
 ## One-time setup on your Mac
 
+(Already downloaded it as the `2048` folder before the project was renamed?
+That copy still works. To point it at the new name, run this once inside it:
+`git remote set-url origin https://github.com/vector-swan/fruit-picnic.git`)
+
 1. **Install Xcode** from the Mac App Store (it's free and large, so give it a
    while). Open it once and let it install any extra parts it asks for.
 2. **Install Node.js** (the "LTS" version) from https://nodejs.org.
 3. **Download the game.** Open the Terminal app and paste:
 
    ```
-   git clone https://github.com/vector-swan/2048.git
-   cd 2048
+   git clone https://github.com/vector-swan/fruit-picnic.git
+   cd fruit-picnic
    git checkout claude/2048-game-app-LkTh3
    npm install
    ```
 
 ## Put the app on your iPhone
 
-1. In Terminal, inside the `2048` folder, run:
+1. In Terminal, inside the `fruit-picnic` folder (or `2048`, if you
+   downloaded it before the rename), run:
 
    ```
    npm run ios
