@@ -2,16 +2,25 @@
 
 const pause = ms => new Promise(r => setTimeout(r, ms));
 
+// Saved settings and scores used to be stored under names starting with
+// "2048"; copy them across once so nobody loses their best score
+try {
+  ['sound', 'theme', 'haptics', 'best', 'tutorial', 'lbId', 'lbName', 'lbPending'].forEach(k => {
+    const old = localStorage.getItem('2048' + k);
+    if (old !== null && localStorage.getItem('fruitpicnic.' + k) === null) localStorage.setItem('fruitpicnic.' + k, old);
+  });
+} catch (_) {}
+
 // ── Audio ─────────────────────────────────────────────────────────────────────
 // Kalimba garden: a soft muted thump for every merge, and a short "climbing
 // phrase" the first time each new fruit appears (same shape, one step higher
 // per fruit). Everything is synthesised with Web Audio; no sound files.
 let soundOn = true;
-try { soundOn = localStorage.getItem('2048sound') !== 'off'; } catch (_) {}
+try { soundOn = localStorage.getItem('fruitpicnic.sound') !== 'off'; } catch (_) {}
 
 // Theme: 'fruit' (Fruit Picnic) or 'halloween' (Spooky Picnic), remembered per phone
 let themeId = 'fruit';
-try { const saved = localStorage.getItem('2048theme'); if (saved === 'halloween') themeId = saved; } catch (_) {}
+try { const saved = localStorage.getItem('fruitpicnic.theme'); if (saved === 'halloween') themeId = saved; } catch (_) {}
 TILE_ART = THEMES[themeId].art;
 
 let audioCtx = null, audioBus = null, audioVerb = null, noiseBuf = null;
@@ -333,7 +342,7 @@ const native = window.Capacitor && window.Capacitor.isNativePlatform && window.C
 const nativePlugin = name => native ? (window.Capacitor.Plugins[name] || window.Capacitor.registerPlugin(name)) : null;
 const Haptics = nativePlugin('Haptics');
 let hapticsOn = true;
-try { hapticsOn = localStorage.getItem('2048haptics') !== 'off'; } catch (_) {}
+try { hapticsOn = localStorage.getItem('fruitpicnic.haptics') !== 'off'; } catch (_) {}
 function haptic(kind) {
   if (!Haptics || !hapticsOn) return;
   try {
@@ -432,7 +441,7 @@ const SLIDE_MS = 130;   // must match CSS transition duration
 let liveTiles = [];
 let nextId = 1;
 let score = 0;
-let best = parseInt(localStorage.getItem('2048best') || '0', 10);
+let best = parseInt(localStorage.getItem('fruitpicnic.best') || '0', 10);
 let celebrationShown = false;
 let highestThisGame = 0;      // for the new-fruit chime
 let busy = false;             // blocks input during slide+merge animation
@@ -775,7 +784,7 @@ function updateScore(add) {
   el.classList.add('score-bump');
   if (score > best) {
     best = score;
-    localStorage.setItem('2048best', best);
+    localStorage.setItem('fruitpicnic.best', best);
     document.getElementById('best').textContent = best;
   }
 }
@@ -857,13 +866,13 @@ document.getElementById('soundToggle').addEventListener('click', () => {
   soundOn = !soundOn;
   if (soundOn) unlockAudio();
   showSoundIcon();
-  try { localStorage.setItem('2048sound', soundOn ? 'on' : 'off'); } catch (_) {}
+  try { localStorage.setItem('fruitpicnic.sound', soundOn ? 'on' : 'off'); } catch (_) {}
 });
 document.getElementById('hapticsToggle').addEventListener('click', () => {
   hapticsOn = !hapticsOn;
   showHapticsIcon();
   haptic('merge');
-  try { localStorage.setItem('2048haptics', hapticsOn ? 'on' : 'off'); } catch (_) {}
+  try { localStorage.setItem('fruitpicnic.haptics', hapticsOn ? 'on' : 'off'); } catch (_) {}
 });
 document.getElementById('keepGoingBtn').addEventListener('click', hideCelebration);
 document.getElementById('celebNewGameBtn').addEventListener('click', newGame);
@@ -888,7 +897,7 @@ document.addEventListener('touchstart', e => {
 const svgURL = svg => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 const THEME_UI = {
   fruit: {
-    title: 'Fruit Picnic', win: 'Sweet victory!', lose: 'Picnic’s over!',
+    title: 'Fruit Picnic', win: 'Sweet victory!', winLine: 'You made a watermelon!', lose: 'Picnic’s over!',
     winArt: () => picnicBasketSVG(false, { blanket: true }), winAlt: 'A picnic basket full of fruit',
     loseArt: () => picnicBasketSVG(false, { empty: true, blanket: true, ants: true }), loseAlt: 'An empty picnic basket',
     confetti: ['#FF85C2', '#CF91F0', '#80D5E0', '#FFE05A', '#B5E48C', '#FF99C8', '#A8DADC'],
@@ -897,7 +906,7 @@ const THEME_UI = {
     color: '#FFF8EC', next: 'halloween',
   },
   halloween: {
-    title: 'Spooky Picnic', win: 'Spooktacular!', lose: 'Out of treats!',
+    title: 'Spooky Picnic', win: 'Spooktacular!', winLine: 'You reached the haunted house!', lose: 'Out of treats!',
     winArt: () => candyBucketSVG({}), winAlt: 'A candy bucket full of sweets',
     loseArt: () => candyBucketSVG({ empty: true, spider: true }), loseAlt: 'An empty candy bucket with a little spider',
     confetti: ['#FF8A2A', '#FFB870', '#8E6CD8', '#B9A2E8', '#7ED36E', '#C8F59A', '#FFF3B0'],
@@ -925,6 +934,7 @@ function applyTheme(id) {
   document.querySelector('h1').textContent = ui.title;
   document.title = ui.title;
   document.querySelector('#celebration h2').textContent = ui.win;
+  document.querySelector('#celebration .win-line').textContent = ui.winLine;
   document.querySelector('#gameover h2').textContent = ui.lose;
   const winArt = document.getElementById('winArt'), loseArt = document.getElementById('gameoverArt');
   winArt.src = svgURL(ui.winArt()); winArt.alt = ui.winAlt;
@@ -939,7 +949,7 @@ function applyTheme(id) {
   Object.keys(TILE_ART).forEach(v => { const i = artNode(v); i.decode && i.decode().catch(() => {}); });
   liveTiles.forEach(t => applyTileDisplay(t));
   document.querySelectorAll('.theme-opt').forEach(b => b.setAttribute('aria-checked', b.dataset.theme === id));
-  try { localStorage.setItem('2048theme', id); } catch (_) {}
+  try { localStorage.setItem('fruitpicnic.theme', id); } catch (_) {}
   if (typeof tutorialRefresh === 'function') tutorialRefresh();
 }
 

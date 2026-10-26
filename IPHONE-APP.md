@@ -11,7 +11,7 @@ The game is wrapped in a real iPhone app using Capacitor. The app adds:
 - **Basket launch screen** and the basket as the home-screen icon.
 - **Portrait only**, so the board never flips sideways.
 
-The website at https://vector-swan.github.io/2048/ keeps working as before.
+The website (https://fruitpicnic.io once its domain is connected) keeps working as before.
 
 ## One-time setup on your Mac
 

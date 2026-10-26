@@ -2,7 +2,7 @@
   "name": "fruit-picnic",
   "version": "1.0.0",
   "private": true,
-  "description": "Fruit Picnic, a 2048 game",
+  "description": "Fruit Picnic, a cozy merge puzzle",
   "scripts": {
     "build": "node scripts/build-www.mjs",
     "ios": "npm run build && cap sync ios && cap open ios",

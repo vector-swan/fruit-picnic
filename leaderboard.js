@@ -19,18 +19,18 @@ const lbStore = {
   set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} },
 };
 function lbPlayerId() {
-  let id = lbStore.get('2048lbId');
+  let id = lbStore.get('fruitpicnic.lbId');
   if (!id) {
     id = (crypto.randomUUID && crypto.randomUUID())
       || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, ch => {
         const r = Math.random() * 16 | 0;
         return (ch === 'x' ? r : (r & 3) | 8).toString(16);
       });
-    lbStore.set('2048lbId', id);
+    lbStore.set('fruitpicnic.lbId', id);
   }
   return id;
 }
-const lbName = () => lbStore.get('2048lbName') || '';
+const lbName = () => lbStore.get('fruitpicnic.lbName') || '';
 
 function lbHeaders() {
   const h = { apikey: LEADERBOARD.key, 'Content-Type': 'application/json' };
@@ -55,18 +55,18 @@ async function lbSubmit(entry) {
 
 // A finished game waits here until it's sent, so scores made offline aren't lost
 async function lbFlush() {
-  const raw = lbStore.get('2048lbPending');
+  const raw = lbStore.get('fruitpicnic.lbPending');
   if (!raw) return null;
   const entry = JSON.parse(raw);
   const rank = await lbSubmit(entry);
   // only clear it if nothing newer was queued meanwhile
-  if (lbStore.get('2048lbPending') === raw) lbStore.set('2048lbPending', null);
+  if (lbStore.get('fruitpicnic.lbPending') === raw) lbStore.set('fruitpicnic.lbPending', null);
   return rank;
 }
 function lbQueue(score, tile) {
-  const prev = JSON.parse(lbStore.get('2048lbPending') || 'null');
+  const prev = JSON.parse(lbStore.get('fruitpicnic.lbPending') || 'null');
   if (prev && prev.score >= score) return;
-  lbStore.set('2048lbPending', JSON.stringify({ name: lbName(), score, tile }));
+  lbStore.set('fruitpicnic.lbPending', JSON.stringify({ name: lbName(), score, tile }));
 }
 
 // ── The "post" row on the win / game-over cards ──
@@ -89,7 +89,7 @@ function lbAsk(row) {
     e.preventDefault();
     const name = input.value.trim().slice(0, 20);
     if (!name) { input.focus(); return; }
-    lbStore.set('2048lbName', name);
+    lbStore.set('fruitpicnic.lbName', name);
     input.blur();
     lbPost(row);
   });
@@ -153,10 +153,10 @@ if (lbOn) {
   document.getElementById('lbRename').addEventListener('click', () => {
     const name = (prompt('Your name for the leaderboard', lbName()) || '').trim().slice(0, 20);
     if (!name) return;
-    lbStore.set('2048lbName', name);
+    lbStore.set('fruitpicnic.lbName', name);
     // re-send your best so the board shows the new name
-    const best = +(lbStore.get('2048best') || 0);
-    if (best > 0) lbStore.set('2048lbPending', JSON.stringify({ name, score: best, tile: 2 }));
+    const best = +(lbStore.get('fruitpicnic.best') || 0);
+    if (best > 0) lbStore.set('fruitpicnic.lbPending', JSON.stringify({ name, score: best, tile: 2 }));
     lbOpen();
   });
   lbFlush().catch(() => {});

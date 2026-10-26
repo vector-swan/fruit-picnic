@@ -21,7 +21,7 @@ const REPLAY_TUTORIAL = new URLSearchParams(location.search).has('tutorial');
 // Done once they've finished it, or if they'd played before it existed
 const tutorialDone = () => {
   if (REPLAY_TUTORIAL && tutorialStage > 0) return false;
-  try { return localStorage.getItem('2048tutorial') === 'done' || +(localStorage.getItem('2048best') || 0) > 0; }
+  try { return localStorage.getItem('fruitpicnic.tutorial') === 'done' || +(localStorage.getItem('fruitpicnic.best') || 0) > 0; }
   catch (_) { return true; }
 };
 let coachEl = null, tutorialStage = 0, tutorialTimers = [];   // stage 1: cherries, 2: strawberries, 3: discover
@@ -68,7 +68,7 @@ function glowScore() {
   box.classList.remove('score-glow'); void box.offsetWidth; box.classList.add('score-glow');
 }
 function tutorialFinish() {
-  try { localStorage.setItem('2048tutorial', 'done'); } catch (_) {}
+  try { localStorage.setItem('fruitpicnic.tutorial', 'done'); } catch (_) {}
   tutorialTimers.forEach(clearTimeout); tutorialTimers = [];
   if (coachEl) { const el = coachEl; coachEl = null; el.classList.add('coach-out'); setTimeout(() => el.remove(), 400); }
   tutorialStage = 0;
@@ -87,7 +87,7 @@ function tutorialMerged(merges = []) {
   } else if ((tutorialStage === 2 || tutorialStage === 1.5) && made(8)) {
     tutorialTimers.forEach(clearTimeout); tutorialTimers = [];
     tutorialStage = 3;
-    try { localStorage.setItem('2048tutorial', 'done'); } catch (_) {}
+    try { localStorage.setItem('fruitpicnic.tutorial', 'done'); } catch (_) {}
     popAt(made(8)); glowScore();
     coachSay(`Bigger ${TUTORIAL_WORDS[themeId].one}s earn more points!`, false);
     later(2600, () => coachSay(`<span class="coach-q">?</span>Keep matching to discover what comes next!`, false));
