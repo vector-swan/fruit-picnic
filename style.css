@@ -1004,3 +1004,21 @@ html[data-skin="halloween"] .lb-list li.me, html[data-skin="halloween"] .theme-o
 .lb-label { justify-self: start; text-align: left; padding-left: 4px; }
 .lb-you { justify-items: stretch; }
 .lb-you-h { justify-self: center; }
+
+/* ── Readability over the gingham, small labels, outlines, closed panels ──
+   (from the design review audit) */
+:root { --title: #D93A62; --hint: #7A4A3C; --hint-link: #A82A4C; --field-edge: #A88272; }
+html[data-skin="night"] { --title: var(--accent-large); --hint: var(--muted); --hint-link: var(--accent-text); --field-edge: #8A6A5E; }
+html[data-skin="halloween"] { --title: var(--accent-large); --hint: var(--muted); --hint-link: var(--accent-text); --field-edge: #7E6AA8; }
+h1 { color: var(--title); }                                   /* 3.5:1 over the darkest gingham crossing */
+.hint { color: var(--hint); }                                 /* 5.8:1 */
+.hint .hint-link { color: var(--hint-link); }                 /* 5.4:1 */
+.score-label { font-size: 0.8125rem; }                        /* 13px, was 10.6px */
+.tile::before { font-size: max(11px, calc(var(--tile-size) * 0.105)); }   /* Apple's 11pt minimum */
+.lb-input { border-color: var(--field-edge); }                /* 3.4:1 so the box is visible (WCAG 1.4.11) */
+/* Closed panels leave the keyboard and VoiceOver order once they've faded out */
+.celebration, .gameover, .leaderboard, .howto, .settings { visibility: hidden; transition: opacity 0.3s, visibility 0s linear 0.3s; }
+.celebration.show, .gameover.show, .leaderboard.show, .howto.show, .settings.show { visibility: visible; transition: opacity 0.3s, visibility 0s; }
+.set-heading { font-size: 0.8125rem; }                        /* 13px, was 11.5px */
+.lb-link::after, .hint-link::after { inset: -14px -6px; }     /* full 44px tap height */
+html[data-skin="night"] { --field-edge: #A07E70; }

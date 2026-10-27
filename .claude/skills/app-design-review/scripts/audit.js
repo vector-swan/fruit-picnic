@@ -46,7 +46,7 @@ const MEASURE = () => {
         pseudo.push({ text: (label || e.getAttribute('data-v') || e.className).toString().slice(0, 30) + ' ' + pe, size: +parseFloat(ps.fontSize).toFixed(1) });
       }
     }
-    if (e.matches('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, textarea, .switch, [role=switch]')) {
+    if (e.matches('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, textarea, .switch, [role=switch]:not(:has(*))')) {
       const cs = getComputedStyle(e); const b = parse(cs.borderTopColor), bw = parseFloat(cs.borderTopWidth);
       const own = parse(cs.backgroundColor); const around = bgOf(e.parentElement || e);
       const edge = bw > 0 && b && b[3] > 0 ? blend(b, around) : (own && own[3] > 0 ? blend(own, around) : null);
@@ -64,10 +64,11 @@ const MEASURE = () => {
   // that are still in the Tab / VoiceOver order
   const hiddenFocus = [...document.querySelectorAll('button, a[href], input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"])')].filter(el => {
     if (el.closest('[hidden], [inert], [aria-hidden="true"]') || el.disabled) return false;
+    if (el.matches('input') && el.closest('label') && el.closest('label').getBoundingClientRect().width > 0) return false;   // custom checkbox: the visible label is the control
     if (getComputedStyle(el).visibility === 'hidden' || getComputedStyle(el).display === 'none') return false;
     for (let e = el; e && e !== document.body; e = e.parentElement) { const cs = getComputedStyle(e); if (parseFloat(cs.opacity) === 0 || cs.pointerEvents === 'none' && e.matches('[class]') && parseFloat(cs.opacity) < 0.05) return true; }
     const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth;
-  }).map(el => (el.getAttribute('aria-label') || el.textContent.trim() || el.id).slice(0, 30));
+  }).map(el => (el.getAttribute('aria-label') || el.textContent.trim() || el.id || el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).split(' ')[0] : '')).slice(0, 30));
   return { text, taps, controls, pseudo, hiddenFocus: [...new Set(hiddenFocus)].slice(0, 12), scope: open ? (open.id || open.className) : 'page' };
 };
 
