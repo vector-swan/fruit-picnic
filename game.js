@@ -624,6 +624,7 @@ async function doMove(dir) {
   if (typeof lbIsOpen !== 'undefined' && lbIsOpen) return;   // leaderboard panel is open
   if (typeof howtoOpen !== 'undefined' && howtoOpen) return; // how-to card is open
   if (typeof settingsOpen !== 'undefined' && settingsOpen) return; // settings card is open
+  if (document.getElementById('celebration').classList.contains('show')) return; // win card is open
   if (busy) { queuedDir = dir; return; }
   const { newPos, merges, moved, scoreAdd } = computeMove(dir);
   if (!moved) return;
@@ -1005,6 +1006,40 @@ document.getElementById('settingsClose').addEventListener('click', closeSettings
 // Tapping the dimmed space around the card closes it too
 document.getElementById('settings').addEventListener('click', e => { if (e.target.id === 'settings') closeSettings(); });
 document.addEventListener('keydown', e => { if (settingsOpen && e.key === 'Escape') closeSettings(); });
+
+// ── Sheets close with a swipe down ────────────────────────────────────────────
+// The sheet follows the finger; letting go past 90px closes it, otherwise it
+// springs back. A drag doesn't start inside a list that's been scrolled, so
+// scrolling the leaderboard never closes it by accident.
+function sheetSwipe(content, close) {
+  let y0 = null, dy = 0;
+  const scrolled = el => { for (; el && el !== content; el = el.parentElement) if (el.scrollTop > 0) return true; return content.scrollTop > 0; };
+  content.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || scrolled(e.target)) return;
+    y0 = e.touches[0].clientY; dy = 0;
+    content.style.transition = 'none';
+  }, { passive: true });
+  content.addEventListener('touchmove', e => {
+    if (y0 === null) return;
+    dy = Math.max(0, e.touches[0].clientY - y0);
+    content.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  const end = () => {
+    if (y0 === null) return;
+    y0 = null;
+    content.style.transition = ''; content.style.transform = '';
+    if (dy > 90) close();
+  };
+  content.addEventListener('touchend', end);
+  content.addEventListener('touchcancel', end);
+}
+sheetSwipe(document.querySelector('.settings-content'), closeSettings);
+sheetSwipe(document.querySelector('.celebration-content'), hideCelebration);   // same as "Keep going"
+// the how-to and leaderboard close functions live in scripts that load after this one
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof closeHowTo === 'function') sheetSwipe(document.querySelector('.howto-content'), closeHowTo);
+  if (typeof lbClose === 'function') sheetSwipe(document.querySelector('.leaderboard-content'), lbClose);
+});
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 document.getElementById('best').textContent = Number(best).toLocaleString();
