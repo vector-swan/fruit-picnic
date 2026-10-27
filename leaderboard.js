@@ -302,7 +302,7 @@ const LB_VIEWS = {
   new() {
     return lbBack('groups', 'My groups') + '<h3 class="lb-h">New group</h3>'
       + '<form class="lb-stack" data-form="new"><label class="lb-label" for="lbNewName">Group name</label>'
-      + '<input class="lb-input" id="lbNewName" maxlength="24" placeholder="Smith Family" autocomplete="off" enterkeyhint="done">'
+      + '<input class="lb-input" id="lbNewName" maxlength="24" placeholder="Laughing Lizard" autocomplete="off" enterkeyhint="done">'
       + lbFirstTimeFields('lbNewMe') + lbProblem()
       + '<p class="lb-note">Scores count from today.</p>'
       + '<button class="btn btn-big lb-wide" type="submit">Create group</button></form>';
