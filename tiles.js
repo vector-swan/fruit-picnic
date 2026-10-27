@@ -48,7 +48,7 @@ const heart = (x, y, s, color = '#FF6FA5') =>
   `<g transform="translate(${x},${y}) scale(${s})"><path d="M0,2.8 C-3.6,0 -3.6,-3.2 -1.7,-3.2 C-0.6,-3.2 0,-2.3 0,-1.7 C0,-2.3 0.6,-3.2 1.7,-3.2 C3.6,-3.2 3.6,0 0,2.8 Z" fill="${color}" stroke="${INK}" stroke-width="${0.9 / s}" stroke-linejoin="round"/><ellipse cx="-1.2" cy="-1.6" rx="0.7" ry="0.45" fill="white" opacity="0.8"/></g>`;
 
 function backdrop(c, v, o = {}) {
-  const dark = false;
+  const dark = !!c.dark;   // night tiles: a faint warm glow and golden sparkles
   const { hx = 50, hy = 52, hr = 44, color = dark ? '#FFE9A8' : '#FFFFFF', op = dark ? 0.35 : 0.75 } = o;
   c.defs += `<radialGradient id="${c.p}bg" cx="50%" cy="45%" r="70%"><stop offset="0" stop-color="#FFFFFF" stop-opacity="${dark ? 0.1 : 0.55}"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
 <radialGradient id="${c.p}halo"><stop offset="0" stop-color="${color}" stop-opacity="${op}"/><stop offset="0.6" stop-color="${color}" stop-opacity="${op * 0.45}"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient>`;
@@ -121,8 +121,8 @@ function face(c, cx, cy, r, pal, o = {}) {
   return s;
 }
 
-function tile(v, build, bg = BG, key = 'b') {
-  const c = { p: `${key}${v}`, n: 0, defs: '', bg };
+function tile(v, build, bg = BG, key = 'b', dark = false) {
+  const c = { p: `${key}${v}`, n: 0, defs: '', bg, dark };
   const body = build(c);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${c.defs}</defs>${body}</svg>`;
 }
@@ -316,7 +316,9 @@ function crownAt(c, cx, y0, w, h) {
     + `<circle cx="${cx}" cy="${y0 - h * 0.95}" r="1.8" fill="#FF5FA5"/><circle cx="${cx - w / 2}" cy="${y0 - h}" r="1.4" fill="#7FE0FF"/><circle cx="${cx + w / 2}" cy="${y0 - h}" r="1.4" fill="#7FE0FF"/>`;
 }
 
-const fruitTile = (v, build) => tile(v, build, FRUIT_BG, 'fr');
+// Each fruit's drawing is kept so Cocoa Night can redraw it on a night background
+const FRUIT_BUILD = {};
+const fruitTile = (v, build) => { FRUIT_BUILD[v] = build; return tile(v, build, FRUIT_BG, 'fr'); };
 
 function watermelon(c, v, o = {}) {
   const gold = !!o.gold;
@@ -1042,8 +1044,19 @@ function candyBucketSVG(opts = {}) {
 }
 
 // ── Themes ────────────────────────────────────────────────────────────────────
+// ── Cocoa Night ───────────────────────────────────────────────────────────────
+// The same fruit after dark: each background is a deeper version of its pastel,
+// with a faint warm glow so the tiles don't glare on the dark screen.
+const NIGHT_BG = {
+  2: '#4B3A78', 4: '#3E4680', 8: '#33507A', 16: '#2C5E66', 32: '#2F6045',
+  64: '#4D5E2E', 128: '#6B5A24', 256: '#6E4626', 512: '#6E3A2C',
+  1024: '#6E3238', 2048: '#6E2D52', 4096: '#6E2A55', 8192: '#702650', 16384: '#72234C',
+};
+const NIGHT_ART = Object.fromEntries(Object.entries(FRUIT_BUILD).map(([v, build]) => [v, tile(v, build, NIGHT_BG, 'nf', true)]));
+
 const THEMES = {
   fruit: { name: 'Fruit Picnic', art: FRUIT_ART },
+  night: { name: 'Cocoa Night', art: NIGHT_ART },
   halloween: { name: 'Spooky Picnic', art: HALLOWEEN_ART },
   bears: { name: 'Bear family', art: BEAR_ART },
 };

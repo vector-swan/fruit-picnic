@@ -14,6 +14,7 @@ const TUTORIAL_WORDS = {
   fruit: { pair1: 'cherries', pair2: 'strawberries', one: 'fruit' },
   halloween: { pair1: 'candy corns', pair2: 'hard candies', one: 'treat' },
 };
+TUTORIAL_WORDS.night = TUTORIAL_WORDS.fruit;
 const HAND_SVG = '<svg viewBox="0 0 40 44" aria-hidden="true"><path d="M14 30V9.5a3 3 0 0 1 6 0V21l1.6-.6a3 3 0 0 1 4 2.3l.4-.1a3 3 0 0 1 3.9 2.4l.3-.1a3 3 0 0 1 3.8 2.6V33c0 5.5-4.2 9.5-9.6 9.5h-2.2c-3.4 0-5.6-1.5-7.3-4l-4.4-6.6a2.6 2.6 0 0 1 4-3.3z" fill="#FFFDF8" stroke="#6B3F6E" stroke-width="2" stroke-linejoin="round"/>'
   + '<path d="M20 21v6M25.6 22.6v5M29.9 25v4" stroke="#6B3F6E" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const REPLAY_TUTORIAL = new URLSearchParams(location.search).has('tutorial');
