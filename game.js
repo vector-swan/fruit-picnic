@@ -846,7 +846,7 @@ function newGame() {
   liveTiles = [];
   score = 0; celebrationShown = false; busy = false; queuedDir = null; highestThisGame = 0;
   document.getElementById('score').textContent = '0';
-  document.getElementById('best').textContent = best;
+  document.getElementById('best').textContent = Number(best).toLocaleString();
   spawnTile(); spawnTile();
 }
 
