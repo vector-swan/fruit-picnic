@@ -349,7 +349,7 @@ const LB_VIEWS = {
       + '<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="me">Keep me</button>';
   },
 };
-// Each board's main action, shown at the bottom beside Back to game
+// Each board's main action, pinned to the bottom of the panel
 const LB_MAIN = {
   groups: () => '<button class="btn btn-big" type="button" data-view="new">＋ New group</button>',
   group: () => '<button class="btn btn-big" type="button" data-view="invite">Invite friends</button>',
@@ -376,16 +376,17 @@ function lbShareView(title, fresh) {
 }
 
 function lbRender() {
+  // a group you're no longer in (left on another phone, or removed) falls back to the list
+  if (['group', 'invite', 'leave', 'ready'].includes(lbView) && !lbGroup()) lbView = 'groups';
   const v = LB_VIEWS[lbView] ? lbView : 'everyone';
   $lb('lbView').innerHTML = LB_VIEWS[v]();
   const boards = v === 'everyone' || v === 'groups' || v === 'group';
   $lb('lbFoot').hidden = !(v === 'everyone' || v === 'groups') || !lbName();
   $lb('lbMeName').textContent = lbName();
   $lb('lbFlash').hidden = true;
-  $lb('lbActions').hidden = !boards;
+  $lb('lbActions').hidden = !LB_MAIN[v];
   $lb('lbMain').outerHTML = `<span id="lbMain">${LB_MAIN[v] ? LB_MAIN[v]() : ''}</span>`;
-  const content = $lb('leaderboard').querySelector('.leaderboard-content');
-  content.scrollTop = 0;
+  $lb('lbView').scrollTop = 0;
   if (v === 'everyone') lbFillBoard(null);
   if (v === 'group') lbFillBoard(lbGroupCode);
   if (v === 'groups') lbRefreshGroups();
@@ -665,6 +666,7 @@ if (lbOn) {
   $lb('boardBtn').hidden = false;
   $lb('boardBtn').addEventListener('click', () => lbOpen());
   $lb('lbClose').addEventListener('click', lbClose);
+  document.addEventListener('keydown', e => { if (lbIsOpen && e.key === 'Escape') lbClose(); });
   $lb('lbMeBtn').addEventListener('click', () => lbShow('me'));
   const panel = $lb('lbView');
   $lb('lbMain').parentElement.addEventListener('click', e => {

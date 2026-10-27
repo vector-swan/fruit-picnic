@@ -859,7 +859,25 @@ html[data-skin="night"] { --accent-text: #FF7A95; --accent-large: #FF7A95; --btn
 html[data-skin="halloween"] .step .num, html[data-skin="night"] .step .num { color: #2A1015; }
 html[data-skin="night"] .lb-place b { color: var(--text-dark); }
 
-/* Bottom of the leaderboard: Back to game, with the board's main action beside it */
-.lb-actions { display: flex; gap: 10px; width: 100%; }
-.lb-actions .btn { flex: 1 1 0; min-width: 0; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+/* The leaderboard fills the screen's height: title and close button at the top,
+   the board scrolling in the middle, and its main action pinned to the bottom */
+.leaderboard-content {
+  width: min(420px, calc(100vw - 24px));
+  height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  max-height: none; overflow: hidden; padding: 18px 16px 16px; gap: 10px;
+}
+.lb-top { position: relative; display: flex; align-items: center; justify-content: center; min-height: 44px; flex: none; }
+.lb-x {
+  position: absolute; right: -4px; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border: none; border-radius: 50%; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.lb-x svg { width: 22px; height: 22px; fill: none; stroke: var(--text-dark); stroke-width: 2.6; stroke-linecap: round; }
+.lb-x:active { background: color-mix(in srgb, var(--text-dark) 10%, transparent); }
+.lb-x:focus-visible { outline: 3px solid var(--text-dark); outline-offset: 2px; }
+.lb-view { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; padding: 2px; }
+.leaderboard-content .lb-list { max-height: none; overflow: visible; }
+#lbFlash, #lbFoot, .lb-actions { flex: none; }
+.lb-actions { display: flex; width: 100%; }
 .lb-actions #lbMain { display: contents; }
+.lb-actions .btn { flex: 1; }
