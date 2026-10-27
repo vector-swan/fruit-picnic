@@ -663,7 +663,7 @@ html[data-skin="halloween"] .step .txt { color: #F3E8FF; }
   align-self: flex-start; margin: 4px 0 -4px 4px;
   font: 800 0.72rem var(--display); letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
 }
-.theme-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.theme-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
 .theme-opt {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 10px 6px; border-radius: 14px; cursor: pointer;
@@ -721,3 +721,74 @@ html[data-skin="halloween"] .coach-q, html[data-skin="halloween"] .mystery-tile 
   0%, 100% { box-shadow: 0 0 0 0 transparent; }
   25% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 18px color-mix(in srgb, var(--accent) 55%, transparent); }
 }
+
+/* ── Cocoa Night: Fruit Picnic after dark ─────────────────────────────────────
+   Deep cocoa with a faint pink gingham, strawberry and mustard kept from the
+   day theme. The tiles' deeper backgrounds are in tiles.js (NIGHT_ART). */
+html[data-skin="night"] {
+  --text-dark: #FBE9DC;
+  --accent: #FF7A95;
+  --accent-dark: #A8435A;
+  --mustard: #FFD36B;
+  --mustard-dark: #B07E22;
+  --cream: #2A1B17;
+  --gingham: rgba(255, 122, 149, 0.07);
+  --stitch: #6B4338;
+  --tray: #4A322B;
+  --tray-edge: #1C110E;
+  --muted: #D4AB98;
+}
+html[data-skin="night"] .btn { color: #2A1015; }
+html[data-skin="night"] .btn-secondary { color: #4A2418; }
+html[data-skin="night"] .tile::before { color: #4A2A4C; }
+html[data-skin="night"] .score-box { background: #3A2621; }
+html[data-skin="night"] .score-label { color: #FFB0C0; }
+html[data-skin="night"] .score-value { color: #FBE9DC; }
+html[data-skin="night"] .cell { background: rgba(255, 255, 255, 0.06); }
+html[data-skin="night"] .tile { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 3px 8px rgba(0, 0, 0, 0.25); }
+html[data-skin="night"] .board { box-shadow: 0 6px 0 var(--tray-edge), 0 10px 24px rgba(0, 0, 0, 0.35); }
+html[data-skin="night"] #boardBtn    { --b: #FFD36B; --bd: #B07E22; }
+html[data-skin="night"] #settingsBtn { --b: #FFB3CF; --bd: #B86A84; }
+html[data-skin="night"] .controls .btn-icon svg,
+html[data-skin="night"] .set-ico svg { stroke: #4A2418; }
+html[data-skin="night"] .celebration,
+html[data-skin="night"] .gameover,
+html[data-skin="night"] .leaderboard,
+html[data-skin="night"] .howto,
+html[data-skin="night"] .settings { background: rgba(20, 10, 8, 0.55); }
+html[data-skin="night"] .celebration-content,
+html[data-skin="night"] .gameover-content,
+html[data-skin="night"] .leaderboard-content,
+html[data-skin="night"] .howto-content,
+html[data-skin="night"] .settings-content {
+  background: #3A2621;
+  border-color: #8A5A4C;
+  box-shadow: 0 6px 0 #1C110E, 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+html[data-skin="night"] .celebration-content p,
+html[data-skin="night"] .gameover-content p { color: #FBE9DC; }
+html[data-skin="night"] .stat { background: rgba(255, 255, 255, 0.06); }
+html[data-skin="night"] .stat-label { color: #FFB0C0; }
+html[data-skin="night"] .coach-bubble,
+html[data-skin="night"] .coach-toast { background: #3A2621; border-color: #FF7A95; color: #FBE9DC; box-shadow: 0 4px 0 #1C110E; }
+html[data-skin="night"] .step,
+html[data-skin="night"] .set-row,
+html[data-skin="night"] .theme-opt { background: rgba(255, 255, 255, 0.06); color: #FBE9DC; }
+html[data-skin="night"] .step .txt { color: #FBE9DC; }
+html[data-skin="night"] .theme-opt[aria-checked="true"] { background: rgba(255, 122, 149, 0.18); }
+html[data-skin="night"] .switch { background: rgba(255, 255, 255, 0.18); }
+html[data-skin="night"] .coach-q, html[data-skin="night"] .mystery-tile { background: rgba(255, 255, 255, 0.08); }
+/* leaderboard */
+html[data-skin="night"] .lb-list li { background: rgba(255, 255, 255, 0.06); color: #FBE9DC; }
+html[data-skin="night"] .lb-list li.me { background: rgba(255, 122, 149, 0.2); }
+html[data-skin="night"] .lb-list li.lb-acts, html[data-skin="night"] .lb-list li.lb-gap { background: none; }
+html[data-skin="night"] .lb-note { color: #D4AB98; }
+html[data-skin="night"] .lb-problem { color: #FFB0C0; }
+html[data-skin="night"] .lb-input { background: rgba(255, 255, 255, 0.08); color: #fff; }
+html[data-skin="night"] .lb-tab { border-color: rgba(255, 122, 149, 0.45); color: #FBE9DC; }
+html[data-skin="night"] .lb-tab[aria-selected="true"] { background: #FF7A95; border-color: #FF7A95; color: #2A1015; }
+html[data-skin="night"] .lb-seg { background: rgba(255, 255, 255, 0.06); }
+html[data-skin="night"] .lb-seg button[aria-selected="true"] { background: #FF7A95; color: #2A1015; box-shadow: none; }
+html[data-skin="night"] .lb-gcard, html[data-skin="night"] .lb-opt, html[data-skin="night"] .lb-linkbox { background: rgba(255, 255, 255, 0.06); color: #FBE9DC; }
+html[data-skin="night"] .lb-opt:has(input:checked), html[data-skin="night"] .lb-place { background: rgba(255, 122, 149, 0.18); }
+html[data-skin="night"] .lb-tag { color: #4A2418; }

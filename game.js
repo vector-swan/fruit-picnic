@@ -18,9 +18,9 @@ try {
 let soundOn = true;
 try { soundOn = localStorage.getItem('fruitpicnic.sound') !== 'off'; } catch (_) {}
 
-// Theme: 'fruit' (Fruit Picnic) or 'halloween' (Spooky Picnic), remembered per phone
+// Theme: 'fruit' (Fruit Picnic), 'night' (Cocoa Night) or 'halloween' (Spooky Picnic), remembered per phone
 let themeId = 'fruit';
-try { const saved = localStorage.getItem('fruitpicnic.theme'); if (saved === 'halloween') themeId = saved; } catch (_) {}
+try { const saved = localStorage.getItem('fruitpicnic.theme'); if (saved === 'halloween' || saved === 'night') themeId = saved; } catch (_) {}
 TILE_ART = THEMES[themeId].art;
 
 let audioCtx = null, audioBus = null, audioVerb = null, noiseBuf = null;
@@ -915,6 +915,11 @@ const THEME_UI = {
     color: '#1E1533', next: 'fruit',
   },
 };
+// Cocoa Night: Fruit Picnic after dark. Same fruit, words and sounds; only the
+// colours change (style.css) and the tiles sit on deeper backgrounds (tiles.js).
+THEME_UI.night = Object.assign({}, THEME_UI.fruit, { label: 'Cocoa Night', color: '#2A1B17' });
+// The order the themes appear in Settings
+const THEME_ORDER = ['fruit', 'night', 'halloween'];
 // A chunky six-tooth gear; the hole shows the button's own colour
 const GEAR_ICON = ICON_OPEN
   + '<path fill="#FFFDF8" d="M9.7 4.8L10.2 2L13.8 2L14.3 4.8L17.1 6.4L19.8 5.4L21.6 8.5L19.4 10.4L19.4 13.6L21.6 15.5L19.8 18.6L17.1 17.6L14.3 19.2L13.8 22L10.2 22L9.7 19.2L6.9 17.6L4.2 18.6L2.4 15.5L4.6 13.6L4.6 10.4L2.4 8.5L4.2 5.4L6.9 6.4z"/>'
@@ -943,7 +948,7 @@ function applyTheme(id) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', ui.color);
   const bar = nativePlugin('StatusBar');
-  if (bar) bar.setStyle({ style: id === 'halloween' ? 'DARK' : 'LIGHT' }).catch(() => {});
+  if (bar) bar.setStyle({ style: id === 'fruit' ? 'LIGHT' : 'DARK' }).catch(() => {});
   // swap tile art: forget the old pictures, pre-load the new ones, redraw the board
   Object.keys(artSrc).forEach(k => delete artSrc[k]);
   Object.keys(TILE_ART).forEach(v => { const i = artNode(v); i.decode && i.decode().catch(() => {}); });
@@ -959,13 +964,13 @@ function applyTheme(id) {
 const themePick = document.getElementById('themePick');
 themePick.setAttribute('role', 'radiogroup');
 themePick.setAttribute('aria-label', 'Theme');
-Object.keys(THEME_UI).forEach(id => {
+THEME_ORDER.forEach(id => {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'theme-opt';
   b.dataset.theme = id;
   b.setAttribute('role', 'radio');
-  b.innerHTML = `<img alt="" src="${svgURL(THEMES[id].art[2048])}"><span>${THEME_UI[id].title}</span>`;
+  b.innerHTML = `<img alt="" src="${svgURL(THEMES[id].art[2048])}"><span>${THEME_UI[id].label || THEME_UI[id].title}</span>`;
   b.addEventListener('click', () => { if (themeId !== id) applyTheme(id); });
   themePick.appendChild(b);
 });
