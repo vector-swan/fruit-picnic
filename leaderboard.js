@@ -106,7 +106,7 @@ const lbTrophy = (size = '') => `<span class="lb-trophy${size ? ' lb-trophy-' + 
 const lbFirstTimeFields = id => lbName() ? '' : `<div class="lb-you"><span class="lb-you-h">About you</span>`
   + `<label class="lb-label" for="${id}Name">Your name</label>`
   + `<input class="lb-input" id="${id}Name" maxlength="20" placeholder="What friends call you" autocomplete="nickname" enterkeyhint="done">`
-  + `<span class="lb-note">Shown next to your scores. You only enter this once.</span></div>`;
+  + `<span class="lb-note">You only enter this once.</span></div>`;
 // Checks and saves that box. Returns '' when done, otherwise the problem.
 async function lbSaveFirstTime(root, id) {
   if (lbName()) return '';
@@ -121,7 +121,7 @@ async function lbSaveFirstTime(root, id) {
   }
   return '';
 }
-const LB_OFFLINE = 'Couldn’t reach the leaderboard. Check your connection and try again.';
+const LB_OFFLINE = 'Couldn’t connect. Try again.';
 
 // Where finished games get posted: the boards ticked last time. Kept as what was
 // left unticked, so a group joined later starts out ticked.
@@ -189,7 +189,7 @@ function lbAsk(row, problem = '') {
     + lbGroups().map(g => box(g.code, g.name, !(to.skip || []).includes(g.code))).join('')
     + '</div><p class="lb-note lb-problem" role="alert" hidden></p>'
     + `<button class="btn lb-wide lb-icon-btn" type="submit">${lbTrophy('sm')}Post score</button></form>`
-    + (lbName() ? '' : `<p class="lb-note">Your name shows next to your scores. <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`);
+    + (lbName() ? '' : `<p class="lb-note">Shown to other players · <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`);
   lbDemote(row, true);
   const form = row.querySelector('form'), note = row.querySelector('.lb-problem');
   const say = text => { note.textContent = text; note.hidden = !text; };
@@ -198,7 +198,7 @@ function lbAsk(row, problem = '') {
     e.preventDefault();
     const ticks = [...form.querySelectorAll('.lb-check input')];
     const everyone = ticks[0].checked, groups = ticks.slice(1).filter(t => t.checked).map(t => t.value);
-    if (!everyone && !groups.length) { say('Tick at least one board to post to.'); return; }
+    if (!everyone && !groups.length) { say('Tick a board to post to.'); return; }
     const input = form.querySelector('.lb-input');
     if (input) {
       const name = tidyName(input.value);
@@ -223,7 +223,7 @@ async function lbPost(row) {
     result = await lbFlush();
   } catch (e) {
     if (e.message === 'name_not_allowed') { lbAsk(row, 'Let’s pick a different name'); return; }
-    row.innerHTML = '<p class="lb-note">Couldn’t reach the leaderboard. Your score will be posted next time you’re online.</p>';
+    row.innerHTML = '<p class="lb-note">Offline. It’ll post when you’re back.</p>';
     lbDemote(row, false);
     return;
   }
@@ -274,7 +274,7 @@ const lbProblem = () => lbMsg ? `<p class="lb-note lb-problem" role="alert">${lb
 
 const LB_VIEWS = {
   everyone() {
-    const note = lbName() ? '' : '<p class="lb-note lb-banner">Finish a game and post your score to get on the board.</p>';
+    const note = lbName() ? '' : '<p class="lb-note lb-banner">Post a score to join the board.</p>';
     return lbSeg() + note + '<ol class="lb-list" id="lbList"></ol><p class="lb-note" id="lbStatus" role="status">Loading…</p>'
       + '<p class="lb-note" id="lbShowHidden" hidden><button class="lb-link" type="button" data-act="unhide"></button></p>';
   },
@@ -286,7 +286,7 @@ const LB_VIEWS = {
       + `<span class="lb-gplace">${g.place ? `<b>#${g.place}</b>of ${g.players}` : 'No score<br>yet'}</span></button>`).join('');
     return lbSeg()
       + (groups.length ? `<div class="lb-gcards">${cards}</div>`
-        : '<p class="lb-note lb-empty"><b>No groups yet</b>A group is a private leaderboard for friends or family. Start one and send them the link.</p>')
+        : '<p class="lb-note lb-empty"><b>No groups yet</b>Private boards for friends and family.</p>')
       + '<button class="btn btn-big lb-wide" type="button" data-view="new">＋ New group</button>'
       + '<p class="lb-note">Have a code? <button class="lb-link" type="button" data-view="code">Join a group</button></p>';
   },
@@ -306,7 +306,7 @@ const LB_VIEWS = {
       + '<form class="lb-stack" data-form="new"><label class="lb-label" for="lbNewName">Group name</label>'
       + '<input class="lb-input" id="lbNewName" maxlength="24" placeholder="Smith Family" autocomplete="off" enterkeyhint="done">'
       + lbFirstTimeFields('lbNewMe') + lbProblem()
-      + '<p class="lb-note">Your scores in this group start from today.</p>'
+      + '<p class="lb-note">Scores count from today.</p>'
       + '<button class="btn btn-big lb-wide" type="submit">Create group</button></form>';
   },
   ready() { return lbShareView('Your group is ready!', true); },
@@ -315,7 +315,7 @@ const LB_VIEWS = {
     const g = lbGroup();
     if (!g) return LB_VIEWS.groups();
     return `<h3 class="lb-h">Leave ${lbEsc(g.name)}?</h3>`
-      + '<p class="lb-note">Your scores in this group go away. You can join again with the link, starting fresh.</p>' + lbProblem()
+      + '<p class="lb-note">Your scores here will be deleted.</p>' + lbProblem()
       + '<button class="btn btn-big lb-wide" type="button" data-act="leave">Leave group</button>'
       + '<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="group">Stay</button>';
   },
@@ -331,7 +331,7 @@ const LB_VIEWS = {
     return '<p class="lb-note">You’re invited to join</p>'
       + `<h3 class="lb-h lb-h-big">${lbEsc(g.name)}</h3><p class="lb-note">${lbPlayers(g.members)}</p>`
       + '<form class="lb-stack" data-form="join">' + lbFirstTimeFields('lbJoinMe') + lbProblem()
-      + '<p class="lb-note">Your score here starts fresh. Your next game counts.</p>'
+      + '<p class="lb-note">Your next game counts here.</p>'
       + `<button class="btn btn-big lb-wide" type="submit">Join ${lbEsc(g.name)}</button>`
       + '<button class="lb-link lb-quiet" type="button" data-act="notNow">Not now</button></form>';
   },
@@ -340,23 +340,22 @@ const LB_VIEWS = {
       + '<form class="lb-stack" data-form="rename"><label class="lb-label" for="lbRename">Your name</label>'
       + `<div class="lb-form"><input class="lb-input" id="lbRename" maxlength="20" value="${lbEsc(lbName())}" autocomplete="nickname" enterkeyhint="done">`
       + '<button class="btn lb-save" type="submit">Save</button></div></form>' + lbProblem()
-      + '<p class="lb-note">After each game you choose which boards to post to: Everyone, your groups, or both.</p>'
-      + '<p class="lb-note" id="lbHeldNote" hidden>Your name was reported, so others see “Picnic Player” until it’s reviewed.</p>'
-      + `<p class="lb-note">Names and scores are visible to other players. <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`
+      + '<p class="lb-note" id="lbHeldNote" hidden>Reported: others see “Picnic Player” for now.</p>'
+      + `<p class="lb-note">Visible to other players · <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`
       + '<button class="lb-link lb-quiet" type="button" data-view="remove">Remove me from the leaderboard</button>';
   },
   remove() {
     return '<h3 class="lb-h">Remove me?</h3>'
-      + '<p class="lb-note">Your name and scores come off every board, and you leave your groups.</p>' + lbProblem()
+      + '<p class="lb-note">Deletes your name, scores and groups.</p>' + lbProblem()
       + '<button class="btn btn-big lb-wide" type="button" data-act="remove">Remove me</button>'
       + '<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="me">Keep me</button>';
   },
 };
 function lbSeg() {
   const n = lbGroups().length;
-  return `<div class="lb-seg" role="tablist" aria-label="Which leaderboard">`
-    + `<button type="button" role="tab" aria-selected="${lbView === 'everyone'}" data-view="everyone">Everyone</button>`
-    + `<button type="button" role="tab" aria-selected="${lbView === 'groups'}" data-view="groups">My groups${n ? ` (${n})` : ''}</button></div>`;
+  return `<div class="lb-seg" role="group" aria-label="Which leaderboard">`
+    + `<button type="button" aria-pressed="${lbView === 'everyone'}" data-view="everyone">Everyone</button>`
+    + `<button type="button" aria-pressed="${lbView === 'groups'}" data-view="groups">My groups${n ? ` (${n})` : ''}</button></div>`;
 }
 // The link to send, with Copy and (where the phone has one) Share
 function lbShareView(title, fresh) {
@@ -364,12 +363,12 @@ function lbShareView(title, fresh) {
   if (!g) return LB_VIEWS.groups();
   return (fresh ? `<img class="lb-badge" alt="" src="${svgURL(THEME_UI[themeId].winArt())}">` : lbBack('group', g.name))
     + `<h3 class="lb-h">${lbEsc(title)}</h3>`
-    + (fresh ? `<p class="lb-note"><b>${lbEsc(g.name)}</b> · send this link so friends can join.</p>` : '')
+    + (fresh ? `<p class="lb-note"><b>${lbEsc(g.name)}</b></p>` : '')
     + `<p class="lb-linkbox" id="lbLinkText">${lbEsc(lbInviteURL(g).replace(/^https?:\/\//, ''))}</p>`
     // Share is the main button where the phone has it; Copy link otherwise
     + (navigator.share ? '<button class="btn btn-big lb-wide" type="button" data-act="share">Share link…</button>' : '')
     + `<button class="btn btn-big lb-wide${navigator.share ? ' btn-quiet' : ''}" type="button" data-act="copy">Copy link</button>`
-    + `<p class="lb-note">Friends tap the link to join. Or they can enter the code <b>${lbEsc(g.code)}</b>.</p>`
+    + `<p class="lb-note">Or share the code <b>${lbEsc(g.code)}</b></p>`
     + `<button class="lb-link" type="button" data-view="group">${fresh ? 'Done, go to the group' : 'Done'}</button>`;
 }
 
@@ -377,7 +376,7 @@ function lbRender() {
   const v = LB_VIEWS[lbView] ? lbView : 'everyone';
   $lb('lbView').innerHTML = LB_VIEWS[v]();
   const boards = v === 'everyone' || v === 'groups' || v === 'group';
-  $lb('lbFoot').hidden = !boards || !lbName();
+  $lb('lbFoot').hidden = !(v === 'everyone' || v === 'groups') || !lbName();
   $lb('lbMeName').textContent = lbName();
   $lb('lbFlash').hidden = true;
   $lb('lbClose').hidden = !boards;
@@ -450,8 +449,8 @@ async function lbFillBoard(code) {
     const shown = rows.filter(r => r.me || !hidden.has(r.id));
     const hiddenCount = rows.length - shown.length;
     status.textContent = shown.length ? ''
-      : code ? 'No one has a score here yet. Invite friends and finish a game!'
-      : 'No scores yet. Finish a game to be first!';
+      : code ? 'No scores here yet.'
+      : 'No scores yet. Be the first!';
     $lb('lbShowHidden').hidden = !hiddenCount;
     $lb('lbShowHidden').querySelector('button').textContent = `Show ${hiddenCount} hidden player${hiddenCount === 1 ? '' : 's'}`;
     const items = [];
@@ -478,7 +477,7 @@ async function lbFillBoard(code) {
     list.replaceChildren(...items);
   } catch (_) {
     if (load !== lbLoad || !$lb('lbStatus')) return;
-    status.textContent = 'Couldn’t load the leaderboard. Check your connection and try again.';
+    status.textContent = 'Couldn’t load. Try again.';
   }
 }
 // "Your name was reported" on the Your leaderboard view
@@ -515,7 +514,7 @@ function lbToggleActions(li, r) {
     try {
       await lbRpc('report_name', { p_player: lbPlayerId(), p_target: r.id });
     } catch (_) {
-      $lb('lbStatus').textContent = 'Couldn’t send the report. Check your connection and try again.';
+      $lb('lbStatus').textContent = 'Couldn’t send the report. Try again.';
       return;
     }
     const hidden = lbHidden(); hidden.add(r.id); lbSetHidden(hidden);
@@ -576,7 +575,7 @@ async function lbJoinGroup(form) {
     lbJoining = null;
     lbTab = 'groups';
     lbShow('group', joined.code);
-    lbFlash(`You joined ${joined.name}. Your next game counts here.`);
+    lbFlash(`You joined ${joined.name}.`);
   } catch (err) { lbFormProblem(form, lbGroupError(err)); }
   finally { button.disabled = false; }
 }
@@ -592,7 +591,7 @@ async function lbCopyLink() {
   const g = lbGroup();
   try {
     await navigator.clipboard.writeText(lbInviteURL(g));
-    lbFlash('Link copied. Paste it in a message to your friends.');
+    lbFlash('Link copied.');
   } catch (_) {
     // no clipboard: select the link so it can be copied by hand
     const box = $lb('lbLinkText'), range = document.createRange();

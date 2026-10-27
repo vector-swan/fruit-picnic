@@ -34,7 +34,11 @@
   --stitch: #FFB0C0;
   --tray: #F2DEC4;
   --tray-edge: #DCC2A0;
-  --muted: #B88A7A;
+  --muted: #8C5A4A;          /* notes and labels: dark enough to read (5.4:1 on cream) */
+  --accent-text: #BF3A5B;    /* strawberry for small text and links (5.2:1 on white) */
+  --accent-large: #EC4469;   /* strawberry for big headings (3.5:1) */
+  --btn: #D6375F;            /* pink buttons, deep enough for white text (4.6:1) */
+  --btn-dark: #A82A4C;
   --display: 'Baloo 2', 'Nunito', ui-rounded, system-ui, sans-serif;
 }
 
@@ -92,13 +96,13 @@ h1 {
   letter-spacing: -0.5px;
   line-height: 1;
   white-space: nowrap;
-  color: var(--accent);
+  color: var(--accent-large);
   text-shadow: 0 3px 0 var(--accent-dark);
 }
 
 .subtitle {
   margin-top: 4px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.2px;
   color: var(--muted);
@@ -120,10 +124,10 @@ h1 {
   min-width: 68px;
 }
 .score-label {
-  font-size: 0.58rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 1.5px;
-  color: #E0708A;
+  color: var(--accent-text);
 }
 .score-value {
   font-family: var(--display);
@@ -136,21 +140,22 @@ h1 {
 .controls { display: flex; gap: 8px; }
 
 .btn {
-  background: var(--accent);
+  background: var(--btn);
   color: #fff;
   border: none;
   border-radius: 20px;
+  min-height: 44px;          /* Apple's minimum tap size */
   padding: 8px 20px;
   font-family: var(--display);
   font-size: 0.98rem;
   font-weight: 800;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
-  box-shadow: 0 4px 0 var(--accent-dark);
+  box-shadow: 0 4px 0 var(--btn-dark);
 }
 .btn:active {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--accent-dark);
+  box-shadow: 0 1px 0 var(--btn-dark);
 }
 .btn:focus-visible { outline: 3px solid var(--text-dark); outline-offset: 2px; }
 [hidden] { display: none !important; }
@@ -315,7 +320,7 @@ h1 {
   font-size: 1.8rem;
   font-weight: 800;
   line-height: 1.1;
-  color: var(--accent);
+  color: var(--accent-large);
 }
 .celebration-content p, .gameover-content p {
   color: var(--text-dark);
@@ -352,7 +357,7 @@ h1 {
   line-height: 1;
 }
 .stat-label {
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -362,7 +367,7 @@ h1 {
   font-family: var(--display);
   font-size: 1.25rem;
   line-height: 1.15;
-  color: var(--accent);
+  color: var(--accent-text);
   font-variant-numeric: tabular-nums;
   max-width: 9.5em;
 }
@@ -372,7 +377,7 @@ h1 {
 /* ── Hint ── */
 .hint {
   margin-top: 14px;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--muted);
   text-align: center;
@@ -383,7 +388,7 @@ h1 {
 .score-bump { animation: scoreBump 0.28s ease; }
 @keyframes scoreBump {
   0%   { transform: scale(1); }
-  45%  { transform: scale(1.45); color: var(--accent); }
+  45%  { transform: scale(1.45); color: var(--accent-text); }
   100% { transform: scale(1); }
 }
 
@@ -463,15 +468,16 @@ html[data-skin="halloween"] .btn.btn-quiet, html[data-skin="night"] .btn.btn-qui
   background: rgba(0, 0, 0, 0.035);
   font-weight: 800; color: var(--text-dark);
 }
+.lb-list li.me .lb-rank.lb-rank, .lb-list li.me .lb-score { color: var(--text-dark); }
 .lb-list li.me { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .lb-rank { width: 1.6em; text-align: center; font-family: var(--display); color: var(--muted); }
-.lb-list li:nth-child(1) .lb-rank, .lb-list li:nth-child(2) .lb-rank, .lb-list li:nth-child(3) .lb-rank { color: var(--accent); }
+.lb-list li:nth-child(1) .lb-rank, .lb-list li:nth-child(2) .lb-rank, .lb-list li:nth-child(3) .lb-rank { color: var(--accent-text); }
 .lb-name { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lb-score { font-family: var(--display); font-variant-numeric: tabular-nums; color: var(--accent); }
-.lb-note { font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.lb-score { font-family: var(--display); font-variant-numeric: tabular-nums; color: var(--accent-text); }
+.lb-note { font-size: 0.9rem; font-weight: 700; color: var(--muted); }
 .lb-link {
   background: none; border: none; padding: 0; cursor: pointer;
-  font: inherit; font-weight: 800; color: var(--accent); text-decoration: underline;
+  font: inherit; font-weight: 800; color: var(--accent-text); text-decoration: underline;
 }
 .lb-post { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; justify-items: stretch; width: min(100%, 250px); }
 .lb-form { display: flex; gap: 6px; width: 100%; }
@@ -488,17 +494,17 @@ html[data-skin="halloween"] .btn.btn-quiet, html[data-skin="night"] .btn.btn-qui
 .lb-list li[role="button"] { cursor: pointer; }
 .lb-list li.lb-acts { justify-content: center; gap: 18px; background: none; padding: 2px 0 6px; font-size: 0.9rem; }
 .lb-list li.lb-gap { justify-content: center; background: none; padding: 0; color: var(--muted); letter-spacing: 0.3em; }
-.lb-score.lb-none { font: 700 0.8rem 'Nunito', ui-rounded, system-ui, sans-serif; color: var(--muted); }
+.lb-score.lb-none { font: 700 0.82rem 'Nunito', ui-rounded, system-ui, sans-serif; color: var(--muted); }
 .lb-problem { color: var(--accent-dark); }
 .lb-quiet { color: var(--muted); font-size: 0.85rem; }
 .lb-wide { width: 100%; }
 .lb-back {
   justify-self: start; background: none; border: none; padding: 2px 0; cursor: pointer;
-  font: 800 0.95rem 'Nunito', ui-rounded, system-ui, sans-serif; color: var(--accent);
+  font: 800 0.95rem 'Nunito', ui-rounded, system-ui, sans-serif; color: var(--accent-text);
 }
 .lb-h { font-family: var(--display); font-size: 1.35rem; line-height: 1.15; color: var(--text-dark); text-wrap: balance; }
-.lb-h-big { font-size: 1.7rem; color: var(--accent); }
-.lb-label { justify-self: center; font-size: 0.8rem; font-weight: 800; color: var(--muted); }
+.lb-h-big { font-size: 1.7rem; color: var(--accent-large); }
+.lb-label { justify-self: center; font-size: 0.85rem; font-weight: 800; color: var(--muted); }
 .lb-stack { display: grid; gap: 8px; width: 100%; justify-items: stretch; }
 .lb-stack .lb-input { width: 100%; }
 /* "About you": the first-time name and visibility boxes, kept apart from the group's own boxes */
@@ -519,10 +525,10 @@ html[data-skin="halloween"] .lb-you, html[data-skin="night"] .lb-you { backgroun
 /* Everyone | My groups */
 .lb-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; padding: 4px; border-radius: 16px; background: var(--tray); }
 .lb-seg button {
-  border: none; border-radius: 12px; min-height: 38px; cursor: pointer; background: none;
-  font: 800 0.92rem var(--display); color: var(--muted);
+  border: none; border-radius: 12px; min-height: 44px; cursor: pointer; background: none;
+  font: 800 0.92rem var(--display); color: var(--text-dark); opacity: 0.85;
 }
-.lb-seg button[aria-selected="true"] { background: #fff; color: var(--text-dark); box-shadow: 0 2px 0 var(--tray-edge); }
+.lb-seg button[aria-pressed="true"] { opacity: 1; background: #fff; color: var(--text-dark); box-shadow: 0 2px 0 var(--tray-edge); }
 
 /* My groups list */
 .lb-gcards { display: grid; gap: 8px; width: 100%; }
@@ -534,9 +540,9 @@ html[data-skin="halloween"] .lb-you, html[data-skin="night"] .lb-you { backgroun
 .lb-gicon { width: 38px; height: 38px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; font: 800 1.1rem var(--display); color: #5A2A20; }
 .lb-gtext { flex: 1; min-width: 0; display: grid; }
 .lb-gtext b { font-family: var(--display); font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lb-gtext small { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
-.lb-gplace { text-align: right; font-size: 0.75rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
-.lb-gplace b { display: block; font-family: var(--display); font-size: 1.2rem; line-height: 1.1; color: var(--accent); }
+.lb-gtext small { font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.lb-gplace { text-align: right; font-size: 0.82rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.lb-gplace b { display: block; font-family: var(--display); font-size: 1.2rem; line-height: 1.1; color: var(--accent-text); }
 
 /* "Post to" tick boxes on the game-over card */
 .lb-checks { display: grid; gap: 6px; width: 100%; }
@@ -544,8 +550,8 @@ html[data-skin="halloween"] .lb-you, html[data-skin="night"] .lb-you { backgroun
   display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; cursor: pointer; text-align: left;
   border: 2px dashed var(--stitch); border-radius: 14px; background: rgba(255, 255, 255, 0.6);
 }
-.lb-check:has(input:checked) { border-style: solid; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.lb-check input { accent-color: var(--accent); width: 18px; height: 18px; margin-top: 1px; flex: none; }
+.lb-check:has(input:checked) { border-style: solid; border-color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.lb-check input { accent-color: var(--accent-text); width: 18px; height: 18px; margin-top: 1px; flex: none; }
 .lb-check span { font-weight: 800; font-size: 0.9rem; min-width: 0; overflow-wrap: anywhere; }
 .lb-check b { display: block; font-size: 0.9rem; }
 .lb-check small { display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); line-height: 1.3; margin-top: 2px; }
@@ -560,15 +566,15 @@ html[data-skin="halloween"] .lb-you, html[data-skin="night"] .lb-you { backgroun
   font: 800 0.88rem 'Nunito', ui-rounded, system-ui, sans-serif; color: var(--text-dark);
 }
 .lb-place-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lb-place b { font-family: var(--display); white-space: nowrap; color: var(--accent); }
-.lb-tag { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--mustard); color: var(--text-dark); font-size: 0.7rem; }
+.lb-place b { font-family: var(--display); white-space: nowrap; color: var(--accent-text); }
+.lb-tag { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--mustard); color: var(--text-dark); font-size: 0.82rem; }
 
 .lb-seg button:focus-visible, .lb-gcard:focus-visible, .lb-place:focus-visible, .lb-back:focus-visible, .lb-check:has(input:focus-visible),
 .lb-list li[role="button"]:focus-visible { outline: 3px solid var(--text-dark); outline-offset: 2px; }
 
 html[data-skin="halloween"] .lb-list li.lb-acts, html[data-skin="halloween"] .lb-list li.lb-gap { background: none; }
 html[data-skin="halloween"] .lb-seg { background: rgba(255, 255, 255, 0.08); }
-html[data-skin="halloween"] .lb-seg button[aria-selected="true"] { background: #FF8A2A; color: #2C2148; box-shadow: none; }
+html[data-skin="halloween"] .lb-seg button[aria-pressed="true"] { background: #FF8A2A; color: #2C2148; box-shadow: none; }
 html[data-skin="halloween"] .lb-gcard, html[data-skin="halloween"] .lb-check, html[data-skin="halloween"] .lb-linkbox { background: rgba(255, 255, 255, 0.06); color: #F3E8FF; }
 html[data-skin="halloween"] .lb-check:has(input:checked) { background: rgba(255, 138, 42, 0.18); }
 html[data-skin="halloween"] .lb-tag { color: #fff; }
@@ -588,7 +594,7 @@ html[data-skin="halloween"] .lb-input { background: rgba(255, 255, 255, 0.1); co
 /* ── How to play ── */
 .hint-link {
   background: none; border: none; padding: 0; cursor: pointer;
-  font: inherit; font-weight: 800; color: var(--accent); text-decoration: underline;
+  font: inherit; font-weight: 800; color: var(--accent-text); text-decoration: underline;
 }
 .howto-content { width: min(330px, calc(100vw - 32px)); max-width: none; padding: 26px 20px; gap: 12px; }
 .steps { display: grid; gap: 10px; width: 100%; text-align: left; max-height: 62vh; overflow-y: auto; }
@@ -596,13 +602,13 @@ html[data-skin="halloween"] .lb-input { background: rgba(255, 255, 255, 0.1); co
 .step .num {
   flex: none; width: 26px; height: 26px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  background: var(--accent); color: #fff; font: 800 14px var(--display);
+  background: var(--btn); color: #fff; font: 800 14px var(--display);
 }
 .step .txt { font-weight: 700; font-size: 0.92rem; line-height: 1.3; color: var(--text-dark); }
 .step .txt b { font-family: var(--display); font-weight: 800; }
 .pics { display: flex; align-items: center; gap: 4px; margin-top: 5px; font: 800 15px var(--display); color: var(--muted); }
 .pics img { width: 34px; height: 34px; border-radius: 8px; }
-.swipe-pic { margin-top: 4px; font: 900 18px var(--display); letter-spacing: 3px; color: var(--accent); }
+.swipe-pic { margin-top: 4px; font: 900 18px var(--display); letter-spacing: 3px; color: var(--accent-text); }
 
 /* First-game coach: a bubble and a little hand showing the swipe */
 .coach { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
@@ -612,7 +618,7 @@ html[data-skin="halloween"] .lb-input { background: rgba(255, 255, 255, 0.1); co
   background: #fff; border: 2.5px dashed var(--stitch); box-shadow: 0 4px 0 var(--tray-edge);
   font: 800 clamp(13px, 3.9vw, 15px) var(--display); color: var(--text-dark);
 }
-.coach-bubble b { color: var(--accent); }
+.coach-bubble b { color: var(--accent-text); }
 .coach-trail {
   position: absolute; left: 22%; width: 52%; top: 36%; height: 6px; border-radius: 3px;
   background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 14px); opacity: 0.7;
@@ -683,7 +689,7 @@ html[data-skin="halloween"] .step .txt { color: #F3E8FF; }
   font: 800 0.88rem var(--display); color: var(--text-dark);
 }
 .theme-opt img { width: 54px; height: 54px; border-radius: 12px; display: block; }
-.theme-opt[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.theme-opt[aria-checked="true"] { border-color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 html[data-skin="halloween"] .set-row,
 html[data-skin="halloween"] .theme-opt { background: rgba(255, 255, 255, 0.06); color: #F3E8FF; }
 html[data-skin="halloween"] .theme-opt[aria-checked="true"] { background: rgba(255, 138, 42, 0.18); }
@@ -724,7 +730,7 @@ html[data-skin="halloween"] .set-ico svg { stroke: #3A2550; }
   display: inline-flex; align-items: center; justify-content: center; flex: none;
   width: 26px; height: 26px; border-radius: 7px;
   background: rgba(0, 0, 0, 0.05); border: 2px dashed var(--stitch);
-  font: 800 15px var(--display); color: var(--accent);
+  font: 800 15px var(--display); color: var(--accent-text);
 }
 .mystery-tile { width: 34px; height: 34px; border-radius: 8px; font-size: 18px; }
 html[data-skin="halloween"] .coach-q, html[data-skin="halloween"] .mystery-tile { background: rgba(255, 255, 255, 0.08); }
@@ -800,7 +806,7 @@ html[data-skin="night"] .lb-input { background: rgba(255, 255, 255, 0.08); color
 html[data-skin="night"] .lb-tab { border-color: rgba(255, 122, 149, 0.45); color: #FBE9DC; }
 html[data-skin="night"] .lb-tab[aria-selected="true"] { background: #FF7A95; border-color: #FF7A95; color: #2A1015; }
 html[data-skin="night"] .lb-seg { background: rgba(255, 255, 255, 0.06); }
-html[data-skin="night"] .lb-seg button[aria-selected="true"] { background: #FF7A95; color: #2A1015; box-shadow: none; }
+html[data-skin="night"] .lb-seg button[aria-pressed="true"] { background: #FF7A95; color: #2A1015; box-shadow: none; }
 html[data-skin="night"] .lb-gcard, html[data-skin="night"] .lb-check, html[data-skin="night"] .lb-linkbox { background: rgba(255, 255, 255, 0.06); color: #FBE9DC; }
 html[data-skin="night"] .lb-check:has(input:checked), html[data-skin="night"] .lb-place { background: rgba(255, 122, 149, 0.18); }
 html[data-skin="night"] .lb-tag { color: #4A2418; }
@@ -824,3 +830,31 @@ html[data-skin="halloween"] .lb-trophy svg [fill="#FFFDF8"] { fill: #FFF6E8; }
 html[data-skin="night"] .lb-trophy { --b: #FFD36B; }
 html[data-skin="night"] .lb-trophy-lg { box-shadow: 0 3px 0 #B07E22; }
 html[data-skin="night"] .lb-trophy svg { stroke: #4A2418; }
+
+/* ── Readability and tap sizes (WCAG and Apple guidelines) ── */
+/* Taps of at least 44px. Links inside sentences get a bigger invisible tap area
+   so the text itself stays the same size. */
+.lb-link, .hint-link, .lb-back { position: relative; }
+.lb-link::after, .hint-link::after, .lb-back::after { content: ""; position: absolute; inset: -12px -6px; }
+.lb-view > .lb-link, .lb-view > .lb-back, .lb-post > .lb-link, .lb-stack > .lb-link {
+  min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px;
+}
+.lb-view > .lb-link::after, .lb-view > .lb-back::after, .lb-post > .lb-link::after, .lb-stack > .lb-link::after { inset: 0; }
+.lb-place, .lb-check, .lb-input, .lb-gcard { min-height: 44px; }
+.lb-check { align-items: center; }
+.lb-check input { margin-top: 0; }
+
+/* Spooky Picnic and Cocoa Night: their own readable text colours and buttons */
+html[data-skin="halloween"] { --accent-text: #FF8A2A; --accent-large: #FF8A2A; --btn: #FF8A2A; --btn-dark: #B8520C; }
+html[data-skin="halloween"] .btn { color: #2C2148; }
+html[data-skin="halloween"] .btn-secondary { background: #6F4FC0; box-shadow: 0 4px 0 #4E3590; color: #fff; }
+html[data-skin="halloween"] .lb-tag { background: #FFA24A; color: #2C2148; }
+html[data-skin="night"] { --accent-text: #FF7A95; --accent-large: #FF7A95; --btn: #FF7A95; --btn-dark: #A8435A; }
+
+/* Short phones (like the iPhone SE): tighter cards so the post step fits */
+@media (max-height: 700px) {
+  .celebration-content, .gameover-content { padding: 20px 22px; gap: 10px; }
+  .basket-art { width: 104px; height: 104px; }
+}
+html[data-skin="halloween"] .step .num, html[data-skin="night"] .step .num { color: #2A1015; }
+html[data-skin="night"] .lb-place b { color: var(--text-dark); }
