@@ -858,3 +858,8 @@ html[data-skin="night"] { --accent-text: #FF7A95; --accent-large: #FF7A95; --btn
 }
 html[data-skin="halloween"] .step .num, html[data-skin="night"] .step .num { color: #2A1015; }
 html[data-skin="night"] .lb-place b { color: var(--text-dark); }
+
+/* Bottom of the leaderboard: Back to game, with the board's main action beside it */
+.lb-actions { display: flex; gap: 10px; width: 100%; }
+.lb-actions .btn { flex: 1 1 0; min-width: 0; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+.lb-actions #lbMain { display: contents; }

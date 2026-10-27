@@ -287,7 +287,6 @@ const LB_VIEWS = {
     return lbSeg()
       + (groups.length ? `<div class="lb-gcards">${cards}</div>`
         : '<p class="lb-note lb-empty"><b>No groups yet</b>Private boards for friends and family.</p>')
-      + '<button class="btn btn-big lb-wide" type="button" data-view="new">＋ New group</button>'
       + '<p class="lb-note">Have a code? <button class="lb-link" type="button" data-view="code">Join a group</button></p>';
   },
   group() {
@@ -296,7 +295,6 @@ const LB_VIEWS = {
     const meta = [g.players && lbPlayers(g.players), g.started_by && `started by ${lbEsc(g.started_by)}`].filter(Boolean).join(' · ');
     return lbBack('groups', 'My groups')
       + `<h3 class="lb-h">${lbEsc(g.name)}</h3>${meta ? `<p class="lb-note">${meta}</p>` : ''}`
-      + '<button class="btn btn-big lb-wide" type="button" data-view="invite">Invite friends</button>'
       + '<ol class="lb-list" id="lbList"></ol><p class="lb-note" id="lbStatus" role="status">Loading…</p>'
       + '<p class="lb-note" id="lbShowHidden" hidden><button class="lb-link" type="button" data-act="unhide"></button></p>'
       + '<button class="lb-link lb-quiet" type="button" data-view="leave">Leave group</button>';
@@ -351,6 +349,11 @@ const LB_VIEWS = {
       + '<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="me">Keep me</button>';
   },
 };
+// Each board's main action, shown at the bottom beside Back to game
+const LB_MAIN = {
+  groups: () => '<button class="btn btn-big" type="button" data-view="new">＋ New group</button>',
+  group: () => '<button class="btn btn-big" type="button" data-view="invite">Invite friends</button>',
+};
 function lbSeg() {
   const n = lbGroups().length;
   return `<div class="lb-seg" role="group" aria-label="Which leaderboard">`
@@ -379,7 +382,8 @@ function lbRender() {
   $lb('lbFoot').hidden = !(v === 'everyone' || v === 'groups') || !lbName();
   $lb('lbMeName').textContent = lbName();
   $lb('lbFlash').hidden = true;
-  $lb('lbClose').hidden = !boards;
+  $lb('lbActions').hidden = !boards;
+  $lb('lbMain').outerHTML = `<span id="lbMain">${LB_MAIN[v] ? LB_MAIN[v]() : ''}</span>`;
   const content = $lb('leaderboard').querySelector('.leaderboard-content');
   content.scrollTop = 0;
   if (v === 'everyone') lbFillBoard(null);
@@ -663,6 +667,10 @@ if (lbOn) {
   $lb('lbClose').addEventListener('click', lbClose);
   $lb('lbMeBtn').addEventListener('click', () => lbShow('me'));
   const panel = $lb('lbView');
+  $lb('lbMain').parentElement.addEventListener('click', e => {
+    const t = e.target.closest('[data-view]');
+    if (t) lbShow(t.dataset.view);
+  });
   panel.addEventListener('click', e => {
     const t = e.target.closest('[data-view],[data-group],[data-act]');
     if (!t) return;
