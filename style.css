@@ -960,7 +960,7 @@ html[data-skin="night"] .stat, html[data-skin="halloween"] .stat { background: n
 .lb-post { width: 100%; max-width: 320px; }
 .lb-checks { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .lb-check {
-  position: relative; width: auto; min-height: 40px; padding: 0 14px; gap: 6px; align-items: center;
+  position: relative; width: auto; min-height: 44px; padding: 0 14px; gap: 6px; align-items: center;
   border: 2px solid var(--outline); border-radius: 999px; background: transparent;
 }
 .lb-check input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
