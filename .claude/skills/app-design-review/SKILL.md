@@ -38,8 +38,13 @@ node shots.js <url> --scenes scenes.json [--themes ...] --out shots/
 ```
 
 - `audit.js` reports, per scene and theme: text below WCAG contrast
-  (4.5:1, or 3:1 for text ≥24px or ≥18.66px bold), text under 13px, tap
-  targets under 44×44px (Apple) and the axe-core rule violations.
+  (4.5:1, or 3:1 for text ≥24px or ≥18.66px bold), **including the worst
+  case over patterned or gradient backgrounds** (sampled from pixels, since
+  `background-color` alone misses gingham, photos and gradients), text under
+  13px, `::before`/`::after` text under 11px (badges, counters), tap targets
+  under 44×44px (Apple), control outlines under 3:1 (WCAG 1.4.11), buttons in
+  closed panels that are still reachable by Tab / VoiceOver, and the axe-core
+  rule violations.
 - `motion.js` lists every animation and transition with its duration, flags
   anything infinite or longer than 5s (WCAG 2.2.2 needs a way to stop it),
   anything over 400ms (Material's upper bound for UI motion), and reports
@@ -49,10 +54,34 @@ node shots.js <url> --scenes scenes.json [--themes ...] --out shots/
 - `shots.js` screenshots each scene in each theme and builds contact sheets.
   Look at these at full size; most visual problems are only visible there.
 
-Also measure on a **short phone** (375×667) once. Cards that fit on a tall
-phone often overflow there.
+Then cover the **devices and settings** the app actually ships to. Most real
+bugs hide here, and a desktop-sized check never sees them:
+
+- **Short phone** (375×667, iPhone SE): sheets and cards that fit on a tall
+  phone often push their main button off screen.
+- **iPad and landscape**, if the native config allows them. Read the
+  supported orientations and device families (`Info.plist`
+  `UISupportedInterfaceOrientations~ipad`, `UIRequiredDeviceCapabilities`,
+  Android `screenOrientation`), then screenshot at 1024×768 and 768×1024.
+  A board or canvas cut off in landscape is a common rejection reason.
+- **200% text**: set `document.documentElement.style.fontSize = '200%'` (or
+  the in-app text size setting) and screenshot the main screens. Apple's
+  Larger Text label means everything still fits and works at 200%.
+- **Reduce Motion**: run once with `prefers-reduced-motion: reduce` emulated
+  (Playwright `reducedMotion: 'reduce'`) and confirm the big motions actually
+  stop, rather than trusting the CSS inventory.
+- **Offline / backend down**: one pass with the stub removed, to see the
+  error and empty states real users hit.
+
+Also read the native project for review blockers the browser can't show:
+placeholder text (`[CONTACT EMAIL]`, `TODO`, `lorem`) in the privacy page or
+store copy, obsolete capabilities (e.g. `armv7`), a missing privacy policy
+link, or a status bar style that doesn't follow the theme.
 
 Record the numbers. The report quotes them ("2.95:1 on white", "19px tall").
+When the CSS says one thing and the rendered page another (an infinite
+animation overridden to three loops, a colour token changed later in the
+file), trust the rendered measurement and say which you checked.
 
 ## 2. Look (the designer's pass)
 
@@ -127,9 +156,18 @@ underneath. People approve a direction far faster from a picture than from
 a bullet list. Build it as an artifact or HTML page; put real screenshots on
 the "today" side.
 
-After fixes land, **re-run `audit.js`** and quote the before/after numbers.
-A review that ends "all 11 screens × 3 themes pass" is worth more than one
-that ends "looks better".
+**Prove proposed fixes before recommending them.** When you suggest new
+colours, sizes or spacing, inject them into the page (`page.addStyleTag`)
+and re-run `audit.js`, then quote before → after ("link 3.91 → 5.6:1"). A
+replacement colour that fails on the gingham, or a bigger label that
+overflows on the SE, is caught here instead of by the user.
+
+After fixes land in the code, **re-run `audit.js`** and quote the
+before/after numbers. A review that ends "all 11 screens × 3 themes pass" is
+worth more than one that ends "looks better".
+
+Save what you measured next to the report (`audit.json`, the scenes and stub
+files, the contact sheets) so the next review can compare against it.
 
 ## Tone with the user
 

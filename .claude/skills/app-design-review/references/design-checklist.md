@@ -29,6 +29,9 @@ the screen name. Finish with the token counts from `motion.js --tokens`.
 - [ ] Back is top-left; Close (X) is top-right; both ≥44pt.
 - [ ] Works on a 375×667 screen without clipping the primary action.
 - [ ] Dark appearance exists and is picked up from the system when the user hasn't chosen.
+- [ ] iPad and landscape either work (nothing cut off, sensible max width) or are switched off in the native config.
+- [ ] At 200% text everything still fits; long words wrap instead of clipping.
+- [ ] Closed panels are removed from the Tab / VoiceOver order (`inert`, `hidden` or `visibility: hidden`), not just faded out.
 
 ## Content and copy
 - [ ] Centred text is one line; longer text is left-aligned.
@@ -36,6 +39,8 @@ the screen name. Finish with the token counts from `motion.js --tokens`.
 - [ ] Loading, offline and error states exist and use plain words with a next step.
 - [ ] No duplicate information on one screen (the same note under every list).
 - [ ] First-run: name/identity asked once, in its own box, after the user has a reason.
+- [ ] No placeholder text anywhere a reviewer will look (privacy page, store copy, About).
+- [ ] Alignment follows ownership: sheet titles, empty states and one-line moments centred; form labels, helper text, list rows and multi-line paragraphs left-aligned.
 
 ## Motion
 - [ ] 2–3 deliberate moments (arrival, reward, result); everything else is quick (≤300ms) or still.
