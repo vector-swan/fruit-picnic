@@ -495,6 +495,11 @@ html[data-skin="halloween"] .btn-secondary { color: #fff; }
 .lb-label { justify-self: start; font-size: 0.8rem; font-weight: 800; color: var(--muted); }
 .lb-stack { display: grid; gap: 8px; width: 100%; justify-items: center; }
 .lb-stack .lb-input { width: 100%; }
+/* "About you": the first-time name and visibility boxes, kept apart from the group's own boxes */
+.lb-you { display: grid; gap: 6px; width: 100%; padding: 10px 12px 12px; border-radius: 16px; background: rgba(0, 0, 0, 0.035); justify-items: start; text-align: left; }
+.lb-you .lb-input { width: 100%; }
+.lb-you-h { font-family: var(--display); font-size: 1.05rem; color: var(--text-dark); }
+html[data-skin="halloween"] .lb-you, html[data-skin="night"] .lb-you { background: rgba(255, 255, 255, 0.06); }
 .lb-banner, .lb-empty { width: 100%; padding: 10px 12px; border-radius: 14px; border: 2px dashed var(--stitch); }
 .lb-empty b { display: block; font-family: var(--display); font-size: 1.1rem; color: var(--text-dark); }
 .lb-flash { color: var(--text-dark); }

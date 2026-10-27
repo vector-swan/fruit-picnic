@@ -114,10 +114,13 @@ const lbPickedVis = (root, name) => {
   const el = root.querySelector(`input[name="${name}"]:checked`);
   return el ? el.value === 'groups' : lbGroupsOnly();
 };
-// Name and visibility boxes for players who haven't picked a name yet
-const lbFirstTimeFields = id => lbName() ? '' : `<label class="lb-label" for="${id}Name">Your name</label>`
+// Name and visibility boxes for players who haven't picked a name yet. They sit
+// in their own "About you" box so they don't read as more boxes about the group.
+const lbFirstTimeFields = id => lbName() ? '' : `<div class="lb-you"><span class="lb-you-h">About you</span>`
+  + `<span class="lb-note">You only fill this in once.</span>`
+  + `<label class="lb-label" for="${id}Name">Your name</label>`
   + `<input class="lb-input" id="${id}Name" maxlength="20" placeholder="What friends call you" autocomplete="nickname" enterkeyhint="done">`
-  + `<span class="lb-label">Where your scores show</span>${lbVisPicker(id + 'Vis')}`;
+  + `<span class="lb-label">Where your scores show</span>${lbVisPicker(id + 'Vis')}</div>`;
 // Checks and saves those boxes. Returns '' when done, otherwise the problem.
 async function lbSaveFirstTime(root, id) {
   if (lbName()) return '';
@@ -242,7 +245,7 @@ async function lbPost(row) {
 // a group and for changing your name or where your scores show.
 let lbIsOpen = false;
 let lbView = 'everyone';   // everyone, groups, group, new, ready, invite, leave, code, join, me, remove
-let lbTab = 'everyone';    // the last of Everyone / My groups, for the trophy button
+let lbTab = 'everyone';    // Everyone or My groups, for going back from Your leaderboard
 let lbGroupCode = null;    // the group being looked at
 let lbJoining = null;      // a group found from an invite link or code, before joining
 let lbMsg = '';            // a problem to show on the current view
@@ -380,14 +383,27 @@ function lbRender() {
   if (first && (v === 'new' || v === 'code')) first.focus();
 }
 // Switch view. Opens the panel if it's closed.
+// With no view given (the trophy button), it reopens the board the player
+// looked at last: Everyone, My groups or one group. So someone who mostly
+// follows a group lands straight on it.
 function lbOpen(view, code) {
   lbIsOpen = true;
   $lb('leaderboard').classList.add('show');
-  lbShow(view || lbTab, code);
+  if (!view) {
+    const last = lbStore.get('fruitpicnic.lbLast') || 'everyone';
+    const lastGroup = last.startsWith('group:') && lbGroups().find(g => g.code === last.slice(6));
+    if (lastGroup) { view = 'group'; code = lastGroup.code; }
+    else view = last === 'groups' || last.startsWith('group:') ? 'groups' : 'everyone';
+  }
+  lbShow(view, code);
 }
 function lbShow(view, code) {
   if (code) lbGroupCode = code;
   if (view === 'everyone' || view === 'groups') lbTab = view;
+  if (view === 'group') lbTab = 'groups';
+  if (view === 'everyone' || view === 'groups' || view === 'group') {
+    lbStore.set('fruitpicnic.lbLast', view === 'group' ? 'group:' + lbGroupCode : view);
+  }
   lbView = view;
   lbMsg = '';
   lbRender();
