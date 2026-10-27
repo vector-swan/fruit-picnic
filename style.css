@@ -997,3 +997,10 @@ html[data-skin="halloween"] .lb-list li.me, html[data-skin="halloween"] .theme-o
   .celebration-content, .gameover-content, .leaderboard-content, .howto-content, .settings-content { transition: none; }
   .big-emoji { animation: none; }
 }
+
+/* Main buttons in sheets span the width, like New group and Post score */
+#settingsClose, #howtoClose { width: 100%; }
+/* Form labels sit on the left above their box (headings and notes stay centred) */
+.lb-label { justify-self: start; text-align: left; padding-left: 4px; }
+.lb-you { justify-items: stretch; }
+.lb-you-h { justify-self: center; }
