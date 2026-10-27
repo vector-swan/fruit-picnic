@@ -1022,3 +1022,5 @@ h1 { color: var(--title); }                                   /* 3.5:1 over the 
 .set-heading { font-size: 0.8125rem; }                        /* 13px, was 11.5px */
 .lb-link::after, .hint-link::after { inset: -14px -6px; }     /* full 44px tap height */
 html[data-skin="night"] { --field-edge: #A07E70; }
+/* On the game-over card "Post to" heads a centred row of chips, so it stays centred */
+.lb-post .lb-label { justify-self: center; text-align: center; padding-left: 0; }

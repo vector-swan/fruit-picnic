@@ -104,9 +104,8 @@ const lbTrophy = (size = '') => `<span class="lb-trophy${size ? ' lb-trophy-' + 
 // The name box for players who haven't picked a name yet. It sits in its own
 // "About you" box so it doesn't read as another question about the group.
 const lbFirstTimeFields = id => lbName() ? '' : `<div class="lb-you"><span class="lb-you-h">About you</span>`
-  + `<label class="lb-label" for="${id}Name">Your name</label>`
-  + `<input class="lb-input" id="${id}Name" maxlength="20" placeholder="What friends call you" autocomplete="nickname" enterkeyhint="done">`
-  + `<span class="lb-note">You only enter this once.</span></div>`;
+  + `<label class="lb-label" for="${id}Name">Username</label>`
+  + `<input class="lb-input" id="${id}Name" maxlength="20" placeholder="vectorswan" autocomplete="nickname" autocapitalize="off" enterkeyhint="done"></div>`;
 // Checks and saves that box. Returns '' when done, otherwise the problem.
 async function lbSaveFirstTime(root, id) {
   if (lbName()) return '';
@@ -183,7 +182,7 @@ function lbAsk(row, problem = '') {
   const to = lbPostTo();
   const box = (value, label, on) => `<label class="lb-check"><input type="checkbox" value="${lbEsc(value)}"${on ? ' checked' : ''}><span>${lbEsc(label)}</span></label>`;
   row.innerHTML = '<form class="lb-post-form">'
-    + (lbName() ? '' : '<input class="lb-input" maxlength="20" placeholder="Your name" aria-label="Your name for the leaderboard" autocomplete="nickname" enterkeyhint="done">')
+    + (lbName() ? '' : '<input class="lb-input" maxlength="20" placeholder="Username" aria-label="Username for the leaderboard" autocomplete="nickname" enterkeyhint="done">')
     + '<span class="lb-label" id="lbPostToLabel">Post to</span><div class="lb-checks" role="group" aria-labelledby="lbPostToLabel">'
     + box('everyone', 'Everyone', to.everyone !== false)
     + lbGroups().map(g => box(g.code, g.name, !(to.skip || []).includes(g.code))).join('')
@@ -335,7 +334,7 @@ const LB_VIEWS = {
   },
   me() {
     return lbBack(lbTab, 'Leaderboard') + '<h3 class="lb-h">Your leaderboard</h3>'
-      + '<form class="lb-stack" data-form="rename"><label class="lb-label" for="lbRename">Your name</label>'
+      + '<form class="lb-stack" data-form="rename"><label class="lb-label" for="lbRename">Username</label>'
       + `<div class="lb-form"><input class="lb-input" id="lbRename" maxlength="20" value="${lbEsc(lbName())}" autocomplete="nickname" enterkeyhint="done">`
       + '<button class="btn lb-save" type="submit">Save</button></div></form>' + lbProblem()
       + '<p class="lb-note" id="lbHeldNote" hidden>Reported: others see “Picnic Player” for now.</p>'
@@ -647,7 +646,7 @@ async function lbRename(form) {
     lbRender(); $lb('lbRename').value = name;
     return;
   }
-  lbFlash('Name saved.');
+  lbFlash('Username saved.');
 }
 async function lbRemoveMe() {
   try {
