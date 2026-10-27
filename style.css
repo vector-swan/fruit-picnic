@@ -510,7 +510,7 @@ html[data-skin="halloween"] .lb-you, html[data-skin="night"] .lb-you { backgroun
 .lb-banner, .lb-empty { width: 100%; padding: 10px 12px; border-radius: 14px; border: 2px dashed var(--stitch); }
 .lb-empty b { display: block; font-family: var(--display); font-size: 1.1rem; color: var(--text-dark); }
 .lb-flash { color: var(--text-dark); }
-.lb-badge { font-size: 2.6rem; line-height: 1; }
+.lb-badge { width: 96px; height: 96px; display: block; }
 .lb-linkbox {
   width: 100%; padding: 10px 12px; border-radius: 14px; border: 2px dashed var(--accent);
   background: rgba(255, 255, 255, 0.8); font-weight: 800; font-size: 0.95rem; overflow-wrap: anywhere;
@@ -808,3 +808,19 @@ html[data-skin="night"] .lb-tag { color: #4A2418; }
 
 /* single links in the leaderboard sit on the left rather than stretching */
 .lb-view > .lb-link, .lb-view > .lb-back, .lb-post > .lb-link, .lb-stack > .lb-link { justify-self: start; }
+
+/* The game's trophy drawing in a small badge, matching the trophy button */
+.lb-trophy { --b: #FFE07A; display: inline-flex; align-items: center; justify-content: center; flex: none; width: 26px; height: 26px; border-radius: 9px; background: var(--b); vertical-align: middle; }
+.lb-trophy svg { width: 70%; height: 70%; display: block; }
+.lb-trophy-lg { width: 38px; height: 38px; border-radius: 12px; box-shadow: 0 3px 0 #E3B547; }
+.lb-trophy-sm { width: 22px; height: 22px; border-radius: 7px; }
+.lb-title { display: flex; align-items: center; gap: 10px; }
+.lb-icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.lb-posted { display: flex; align-items: center; gap: 8px; }
+html[data-skin="halloween"] .lb-trophy { --b: #FFA24A; }
+html[data-skin="halloween"] .lb-trophy-lg { box-shadow: 0 3px 0 #C9701E; }
+html[data-skin="halloween"] .lb-trophy svg { stroke: #3A2550; }
+html[data-skin="halloween"] .lb-trophy svg [fill="#FFFDF8"] { fill: #FFF6E8; }
+html[data-skin="night"] .lb-trophy { --b: #FFD36B; }
+html[data-skin="night"] .lb-trophy-lg { box-shadow: 0 3px 0 #B07E22; }
+html[data-skin="night"] .lb-trophy svg { stroke: #4A2418; }

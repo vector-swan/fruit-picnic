@@ -89,7 +89,7 @@ async function lbNameProblem(name, max = 20) {
   if (name.length > max) return `Names can be up to ${max} letters.`;
   if (!NAME_CHARS.test(name)) return 'Use letters, numbers and spaces only.';
   try {
-    if (!(await lbRpc('check_name', { p_name: name }))) return 'Let’s pick a different name 🍓';
+    if (!(await lbRpc('check_name', { p_name: name }))) return 'Let’s pick a different name';
   } catch (_) { /* offline: the database checks it again when the score is sent */ }
   return '';
 }
@@ -97,6 +97,9 @@ async function lbNameProblem(name, max = 20) {
 const lbEsc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const lbNum = n => Number(n).toLocaleString();
 const lbPlayers = n => n === 1 ? '1 player' : `${n} players`;
+// The game's own trophy (the same drawing as the trophy button, from game.js),
+// in a small badge, so the leaderboard never falls back to an emoji
+const lbTrophy = (size = '') => `<span class="lb-trophy${size ? ' lb-trophy-' + size : ''}" aria-hidden="true">${TROPHY_ICON}</span>`;
 
 // The name box for players who haven't picked a name yet. It sits in its own
 // "About you" box so it doesn't read as another question about the group.
@@ -114,7 +117,7 @@ async function lbSaveFirstTime(root, id) {
   try { await lbSavePlayer(); }
   catch (e) {
     lbStore.set('fruitpicnic.lbName', null);
-    return e.message === 'name_not_allowed' ? 'Let’s pick a different name 🍓' : LB_OFFLINE;
+    return e.message === 'name_not_allowed' ? 'Let’s pick a different name' : LB_OFFLINE;
   }
   return '';
 }
@@ -185,7 +188,7 @@ function lbAsk(row, problem = '') {
     + box('everyone', 'Everyone', to.everyone !== false)
     + lbGroups().map(g => box(g.code, g.name, !(to.skip || []).includes(g.code))).join('')
     + '</div><p class="lb-note lb-problem" role="alert" hidden></p>'
-    + '<button class="btn lb-wide" type="submit">🏆 Post score</button></form>'
+    + `<button class="btn lb-wide lb-icon-btn" type="submit">${lbTrophy('sm')}Post score</button></form>`
     + (lbName() ? '' : `<p class="lb-note">Your name shows next to your scores. <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`);
   lbDemote(row, true);
   const form = row.querySelector('form'), note = row.querySelector('.lb-problem');
@@ -219,7 +222,7 @@ async function lbPost(row) {
   try {
     result = await lbFlush();
   } catch (e) {
-    if (e.message === 'name_not_allowed') { lbAsk(row, 'Let’s pick a different name 🍓'); return; }
+    if (e.message === 'name_not_allowed') { lbAsk(row, 'Let’s pick a different name'); return; }
     row.innerHTML = '<p class="lb-note">Couldn’t reach the leaderboard. Your score will be posted next time you’re online.</p>';
     lbDemote(row, false);
     return;
@@ -231,7 +234,7 @@ async function lbPost(row) {
     label: g.name, place: g.place ? `#${g.place} of ${g.players}` : '–', best: g.best, group: g.code,
   }));
   const shown = places.slice(0, 4);
-  row.innerHTML = '<p class="lb-note">🏆 Posted as <b></b></p>'
+  row.innerHTML = `<p class="lb-note lb-posted">${lbTrophy('sm')}<span>Posted as <b></b></span></p>`
     + (shown.length ? `<ul class="lb-places">${shown.map((p, i) => `<li><button class="lb-place" type="button" data-i="${i}">`
       + `<span class="lb-place-name">${lbEsc(p.label)}${p.best ? '<span class="lb-tag">New best</span>' : ''}</span><b>${p.place} ›</b></button></li>`).join('')}</ul>`
       : '<button class="lb-link" type="button" data-see>See leaderboard</button>')
@@ -359,7 +362,7 @@ function lbSeg() {
 function lbShareView(title, fresh) {
   const g = lbGroup();
   if (!g) return LB_VIEWS.groups();
-  return (fresh ? '<span class="lb-badge" aria-hidden="true">🧺</span>' : lbBack('group', g.name))
+  return (fresh ? `<img class="lb-badge" alt="" src="${svgURL(THEME_UI[themeId].winArt())}">` : lbBack('group', g.name))
     + `<h3 class="lb-h">${lbEsc(title)}</h3>`
     + (fresh ? `<p class="lb-note"><b>${lbEsc(g.name)}</b> · send this link so friends can join.</p>` : '')
     + `<p class="lb-linkbox" id="lbLinkText">${lbEsc(lbInviteURL(g).replace(/^https?:\/\//, ''))}</p>`
@@ -524,7 +527,7 @@ function lbToggleActions(li, r) {
 
 // ── Groups ──
 const GROUP_ERRORS = {
-  name_not_allowed: 'Let’s pick a different group name 🍓',
+  name_not_allowed: 'Let’s pick a different group name',
   too_many_groups: 'You’re in a lot of groups already. Leave one first.',
   group_not_found: 'No group has that code. Check it and try again.',
 };
@@ -635,7 +638,7 @@ async function lbRename(form) {
   try { await lbSavePlayer(); }
   catch (e) {
     lbStore.set('fruitpicnic.lbName', old);
-    lbMsg = e.message === 'name_not_allowed' ? 'Let’s pick a different name 🍓' : LB_OFFLINE;
+    lbMsg = e.message === 'name_not_allowed' ? 'Let’s pick a different name' : LB_OFFLINE;
     lbRender(); $lb('lbRename').value = name;
     return;
   }
@@ -655,6 +658,7 @@ async function lbRemoveMe() {
 }
 
 if (lbOn) {
+  $lb('lbTitle').insertAdjacentHTML('afterbegin', lbTrophy('lg'));
   $lb('boardBtn').hidden = false;
   $lb('boardBtn').addEventListener('click', () => lbOpen());
   $lb('lbClose').addEventListener('click', lbClose);
