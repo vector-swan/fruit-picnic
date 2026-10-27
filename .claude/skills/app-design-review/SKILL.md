@@ -1,6 +1,6 @@
 ---
 name: app-design-review
-description: Full design review of a web app, PWA or Capacitor/iPhone app (and games) against accessibility (WCAG 2.2 AA, Apple's accessibility labels), motion, UX heuristics (Nielsen Norman, Apple HIG) and UI design-system consistency, ending in a prioritised fix plan. Use this whenever someone asks to review, audit, check or critique an app's design, UI, UX, accessibility, polish, "does it look professional", "is it ready to ship / go live", "make it slick / cozy / consistent", or asks about contrast, tap targets, text size, dark mode, Reduce Motion, VoiceOver, or App Store readiness — even if they only name one of these areas. Also use it before shipping a redesign, to re-measure after fixes, or when a user shares screenshots and asks what to improve.
+description: Full design review of a web app, PWA or Capacitor/iPhone app (and games) against accessibility (WCAG 2.2 AA, Apple's accessibility labels), motion, UX heuristics (Nielsen Norman, Apple HIG) and UI design-system consistency, ending in a prioritised fix plan. Use only when the user explicitly asks for a full or complete review, audit or check of the app's design / accessibility / UX (for example "do a full review", "run the design review", "audit the app before launch"). Do not use it for a single design question, a one-off fix, or feedback on one screen; answer those directly.
 ---
 
 # App design review
@@ -142,7 +142,12 @@ Write the report with `references/report-template.md`. The shape is:
 1. **How I checked** (scenes × themes, scripts, by-hand reads).
 2. **Scorecard**: a table of areas with Pass / Fail / Gap and the number.
 3. **The plan in phases**, each item with the fix *and* the standard it
-   meets, sized in hours or days:
+   meets. Size it honestly for how the work will actually be done: your own
+   working time in minutes (most CSS and copy fixes are a few minutes each;
+   a new feature like on-screen controls or a screen-reader layer is tens of
+   minutes), plus any steps only the user can do (testing on their phone,
+   running a database script, App Store Connect forms). Don't quote human
+   developer days; they mislead the user about cost and speed.
    - Phase 1: must-fix requirements (accessibility failures, broken flows)
    - Phase 2: assistive tech and text size (VoiceOver, Larger Text, dark)
    - Phase 3: UX polish (confirmations, copy, empty states)
@@ -168,6 +173,12 @@ worth more than one that ends "looks better".
 
 Save what you measured next to the report (`audit.json`, the scenes and stub
 files, the contact sheets) so the next review can compare against it.
+
+## When to run it
+
+Run the full review only when asked for one. Between reviews, keep using
+what it taught (contrast, tap size, one primary button, Reduce Motion) when
+building, but don't launch the scripts, research and report unprompted.
 
 ## Tone with the user
 

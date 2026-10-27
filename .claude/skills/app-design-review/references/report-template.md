@@ -37,11 +37,14 @@ criterion numbers in the plan, not the scorecard.
 | Privacy policy and labels | … | |
 
 ## The plan
-**Phase 1 — must fix (requirements)** · size
-1. Fix → criterion it meets.
-**Phase 2 — assistive tech and text size** · size
-**Phase 3 — UX polish** · size
-**Phase 4 — store listing** · size
+**Phase 1 — must fix (requirements)** · my time ≈ N min · your steps: …
+1. Fix → criterion it meets (≈ N min)
+**Phase 2 — assistive tech and text size** · my time ≈ N min · your steps: …
+**Phase 3 — UX polish** · my time ≈ N min
+**Phase 4 — store listing** · your steps in App Store Connect
+
+Sizes are the assistant's own working time plus the user's hands-on steps,
+never human developer days.
 Legal/compliance note if relevant (one paragraph, "not legal advice").
 
 ## Visual direction (if the review covers look and feel)
