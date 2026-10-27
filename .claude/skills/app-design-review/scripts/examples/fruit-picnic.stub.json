@@ -1,0 +1,8 @@
+{
+  "/rpc/check_name": true,
+  "/rpc/save_player": null,
+  "/rpc/leaderboard": [ { "id": "a", "name": "Juniper", "score": 21480, "me": false, "held": false, "place": 1 }, { "id": "b", "name": "Theo B", "score": 16340, "me": false, "held": false, "place": 2 }, { "id": "m", "name": "Mimi", "score": 4820, "me": true, "held": false, "place": 212 } ],
+  "/rpc/group_list": [ { "code": "FIG-1111", "name": "Family", "players": 3, "place": 2, "best": 3500, "started_by": "Ava" } ],
+  "/rpc/group_board": [ { "id": "c", "name": "Ava", "score": 4100, "me": false, "held": false, "place": 1 }, { "id": "m", "name": "Mimi", "score": 3500, "me": true, "held": false, "place": 2 } ],
+  "/rpc/post_score": { "everyone": 198, "everyone_best": true, "groups": [] }
+}

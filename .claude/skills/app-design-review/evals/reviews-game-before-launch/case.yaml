@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: reviews-game-before-launch
+expected_outcome: |
+  A written review that (1) measures rather than eyeballs: it runs or writes a
+  contrast / text-size / tap-size check and an axe-style WCAG check across the
+  app's screens and themes and quotes the numbers; (2) inventories motion and
+  checks Reduce Motion coverage and endless animations; (3) looks at the screens
+  (screenshots or contact sheets) and comments on hierarchy, consistency (radii,
+  shadows, weights), primary actions, native-feel and copy; (4) maps each
+  finding to the standard it fails (WCAG criterion, Apple HIG / label, NN/g
+  heuristic); (5) ends with a scorecard and a phased plan separating
+  requirements from taste, with sizes; (6) cites sources.

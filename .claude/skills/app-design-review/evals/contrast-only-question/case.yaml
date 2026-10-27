@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: contrast-only-question
+expected_outcome: |
+  The response measures contrast ratios programmatically (not by eye) for the
+  real rendered text in all three themes, quotes the failing ratios against the
+  WCAG 4.5:1 / 3:1 thresholds, names concrete replacement colours that pass,
+  and does not drift into a full redesign the user didn't ask for, while
+  briefly noting any closely related finding (e.g. text under 13px).

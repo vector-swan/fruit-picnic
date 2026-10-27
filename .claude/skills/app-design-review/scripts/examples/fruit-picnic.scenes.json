@@ -1,0 +1,10 @@
+[
+  { "name": "main" },
+  { "name": "settings", "setup": "openSettings()" },
+  { "name": "how-to-play", "setup": "document.getElementById('howtoBtn').click()" },
+  { "name": "game-over", "setup": "score = 2940; showGameOver()" },
+  { "name": "win", "setup": "setUpAlmostWin(); showCelebration()" },
+  { "name": "leaderboard-everyone", "setup": "lbOpen('everyone')" },
+  { "name": "leaderboard-groups", "setup": "lbOpen('groups')" },
+  { "name": "leaderboard-new-group", "setup": "lbOpen('new')" }
+]
