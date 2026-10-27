@@ -1,0 +1,663 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Picnic Music Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* Layout: a fruit strip that lights up as the pretend game merges, one mixing bar, then "no music"
+   pinned first and four music styles beside it. Same candy palette as the other Fruit Picnic labs. */
+:root {
+  --bg: #fff3f7;
+  --surface: #ffffff;
+  --ink: #4a2a4c;
+  --mist: #7a5a7d;
+  --accent: #e8508f;
+  --line: #f3d5e3;
+  --chip: #fbe7f0;
+  --on-pastel: #3a1d3c;
+  --font-display: "Baloo 2", "Nunito", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-body: "Nunito", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #22152a; --surface: #321f3b; --ink: #fbeaf4; --mist: #d2b6d6; --accent: #ff7fb4; --line: #4b3156; --chip: #43294d; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #22152a; --surface: #321f3b; --ink: #fbeaf4; --mist: #d2b6d6; --accent: #ff7fb4; --line: #4b3156; --chip: #43294d; color-scheme: dark; }
+
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+button { font-family: var(--font-body); cursor: pointer; color: inherit; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+header { display: flex; flex-direction: column; gap: 8px; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(36px, 7.5vw, 56px); line-height: 0.95; color: var(--accent); text-wrap: balance; }
+h1 span { color: var(--ink); }
+.intro { margin: 0; max-width: 68ch; line-height: 1.5; color: var(--mist); }
+.intro b { color: var(--ink); }
+.eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mist); }
+
+.strip { display: flex; flex-direction: column; gap: 10px; }
+.fruits { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 6px; }
+.fruit { border-radius: 14px; aspect-ratio: 1; background: var(--tile); position: relative; overflow: hidden; box-shadow: 0 2px 0 rgba(74, 42, 76, 0.18); transition: transform .15s, box-shadow .15s; max-width: 100%; }
+.fruit img { width: 100%; height: 100%; display: block; }
+.fruit.hit { transform: translateY(-4px) scale(1.06); box-shadow: 0 0 0 3px var(--accent); }
+.fruit.fresh { transform: translateY(-6px) scale(1.12); box-shadow: 0 0 0 4px var(--accent), 0 6px 14px rgba(232, 80, 143, 0.35); }
+@media (max-width: 640px) { .fruits { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; padding: 12px 16px; border-radius: 18px; background: var(--surface); border: 1.5px solid var(--line); }
+.bar label { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mist); }
+.bar .grp { display: flex; align-items: center; gap: 10px; }
+.bar input[type="range"] { width: 140px; accent-color: var(--accent); }
+.bar output { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 3.2em; }
+.status { font-size: 13px; color: var(--mist); flex: 1 1 100%; min-width: 0; }
+.switch { position: relative; width: 46px; height: 28px; flex: none; border: none; border-radius: 999px; background: var(--line); padding: 0; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(60, 20, 60, 0.3); transition: transform .2s; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+.pill { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.card { display: flex; flex-direction: column; border-radius: 24px; background: var(--surface); border: 1.5px solid var(--line); overflow: hidden; min-width: 0; transition: box-shadow .2s; }
+.card.playing { box-shadow: 0 0 0 4px var(--c); }
+.card.fav { border-color: var(--accent); border-width: 2.5px; }
+.band { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--c); color: var(--on-pastel); }
+.band .letter { min-width: 44px; padding: 0 6px; box-sizing: border-box; width: auto; height: 44px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 800; font-size: 24px; background: rgba(255, 255, 255, 0.6); }
+.band h3 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1; }
+.band .sub { font-size: 13px; font-weight: 700; margin-top: 3px; }
+.body { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; flex: 1; }
+.body p { margin: 0; color: var(--mist); line-height: 1.45; font-size: 14px; }
+.changes { margin: 0; padding: 10px 12px; list-style: none; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; border-radius: 12px; background: var(--chip); }
+.changes li { display: contents; }
+.changes b { font-weight: 800; }
+.changes span { color: var(--mist); }
+.chords { display: flex; gap: 6px; align-items: center; }
+.chords .lbl { font-size: 12px; font-weight: 800; color: var(--mist); margin-right: 2px; }
+.chords span.ch { flex: 1 1 0; min-width: 0; padding: 5px 4px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 800; background: var(--bg); border: 1.5px solid var(--line); transition: background .15s, transform .15s; }
+.chords span.ch.on { background: var(--c); border-color: var(--c); color: var(--on-pastel); transform: translateY(-2px); }
+.demo { min-height: 46px; border-radius: 999px; border: none; background: var(--c); color: var(--on-pastel); font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 0 rgba(58, 29, 60, 0.18); }
+.demo:hover { filter: brightness(1.04) saturate(1.1); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.row button { min-height: 38px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--bg); font-size: 13px; font-weight: 700; }
+.row button:hover { border-color: var(--c); }
+.row button[aria-pressed="true"] { border-color: var(--c); background: var(--c); color: var(--on-pastel); font-weight: 800; }
+.tweak { border-radius: 14px; background: var(--chip); }
+.tweak summary { cursor: pointer; padding: 10px 12px; font-size: 13px; font-weight: 800; border-radius: 14px; }
+.tweak summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.tw { display: flex; flex-direction: column; gap: 10px; padding: 2px 12px 12px; }
+.ctl { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; }
+.ctl label, .ctl .clbl { font-weight: 800; color: var(--mist); }
+.ctl input[type="range"] { width: 100%; min-width: 0; accent-color: var(--accent); }
+.ctl output { font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4.6em; text-align: right; }
+.ctl select { grid-column: 2 / 4; min-width: 0; min-height: 34px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: 700 13px var(--font-body); padding: 0 6px; }
+.seg { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button { flex: 1 1 0; min-height: 32px; padding: 0 6px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-size: 12px; font-weight: 700; }
+.seg button[aria-pressed="true"] { background: var(--c); border-color: var(--c); color: var(--on-pastel); font-weight: 800; }
+.seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+.reset { align-self: flex-start; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1.5px dashed var(--line); background: transparent; font-size: 12px; font-weight: 800; color: var(--mist); }
+.favbtn { margin-top: auto; min-height: 40px; border-radius: 999px; border: 1.5px dashed var(--line); background: transparent; font-size: 13px; font-weight: 800; color: var(--mist); }
+.favbtn[aria-pressed="true"] { border: 1.5px solid var(--accent); background: var(--accent); color: #fff; }
+
+.verdict { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 14px 16px; border-radius: 18px; background: var(--surface); border: 2px solid var(--accent); }
+.verdict code { flex: 1 1 300px; min-width: 0; font-size: 13px; background: var(--chip); padding: 8px 10px; border-radius: 10px; overflow-wrap: anywhere; user-select: all; font-family: ui-monospace, Menlo, monospace; }
+.foot { margin: 0; font-size: 13px; color: var(--mist); max-width: 72ch; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .fruit, .switch, .switch::after, .card, .chords span.ch { transition: none; } .fruit.hit, .fruit.fresh, .chords span.ch.on { transform: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Picnic <span>Music Lab</span></h1>
+    <p class="intro">Background music styles for Fruit Picnic. <b>Play the song</b> to hear just the music, or <b>Play with game sounds</b> to have a pretend player swipe, merge and make new fruits on top. Open <b>Change the song</b> on any card to adjust its tempo, chords, instruments and parts while it plays. Everything is in the same key as your merges (C major pentatonic), so the merges land as part of the song. The tune is made up as it plays and changes a little every eight bars, so it never repeats exactly. Start with <b>No music</b> to hear the game as it is today.</p>
+  </header>
+
+  <section class="strip" aria-label="Fruits being merged by the pretend player">
+    <span class="eyebrow">The pretend player · fruits light up as they merge when game sounds are on</span>
+    <div class="fruits" id="fruits"></div>
+  </section>
+
+  <div class="bar">
+    <div class="grp"><label for="vol">Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="0.8"></div>
+    <div class="grp"><label for="lvl">Music level</label><input id="lvl" type="range" min="0" max="1" step="0.05" value="0.5"><output id="lvlOut" for="lvl">50%</output></div>
+    <div class="grp"><label for="duck">Dip for new fruits</label><button class="switch" id="duck" type="button" role="switch" aria-checked="true"></button></div>
+    <div class="grp"><label for="phone">Phone speaker</label><button class="switch" id="phone" type="button" role="switch" aria-checked="false"></button></div>
+    <span class="status" id="status">Evening out the volumes, one moment…</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="verdict">
+    <span class="eyebrow">Your favourite</span>
+    <code id="readout">Nothing picked yet. Tap "This one" on a card.</code>
+    <button class="pill" id="copy" type="button">Copy</button>
+  </div>
+
+  <p class="foot">Your changes to each song are kept in this browser, and they come in at the next bar while it plays. Music level 50% is about where I'd start: the music sits under the merges. "Dip for new fruits" briefly lowers the music when a new fruit plays, so that moment still stands out. Try each style on your phone for a few minutes, since a loop that's cute for 20 seconds can wear thin over a long game. Send me the favourite (the line above includes all your changes) and I'll put it in the game behind its own Music switch.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const ART = {"2":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr2r\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#FF8A9C\"/><stop offset=\"1\" stop-color=\"#D61F4A\"/></radialGradient><linearGradient id=\"fr2l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr2bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr2halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#E3D4FA\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr2bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr2halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"86\" rx=\"26\" ry=\"3.6400000000000006\" fill=\"#8A5A9A\" opacity=\"0.16\"/><path d=\"M 50,24 Q 43,40 36,55\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,24 Q 43,40 36,55\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><path d=\"M 50,24 Q 58,40 64,53\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,24 Q 58,40 64,53\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><g transform=\"translate(50,24) rotate(-25)\"><path d=\"M 0,0 Q 9,-7.56 18,0 Q 9,7.56 0,0 Z\" fill=\"url(#fr2l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.6999999999999997,0 L 14.4,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><circle cx=\"36\" cy=\"66\" r=\"13\" fill=\"url(#fr2r)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"31\" cy=\"60\" rx=\"3.6\" ry=\"2\" transform=\"rotate(-30 31 60)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"64\" cy=\"64\" r=\"13\" fill=\"url(#fr2r)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"59\" cy=\"58\" rx=\"3.6\" ry=\"2\" transform=\"rotate(-30 59 58)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"31.32\" cy=\"67\" r=\"2\" fill=\"#4A2A4C\"/><circle cx=\"30.62\" cy=\"66.2\" r=\"0.84\" fill=\"white\"/><circle cx=\"40.68\" cy=\"67\" r=\"2\" fill=\"#4A2A4C\"/><circle cx=\"39.98\" cy=\"66.2\" r=\"0.84\" fill=\"white\"/><path d=\"M 34.44,68.69 q 1.56,1.69 3.12,0\" stroke=\"#4A2A4C\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"28.72\" cy=\"68.82\" rx=\"1.95\" ry=\"1.17\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"43.28\" cy=\"68.82\" rx=\"1.95\" ry=\"1.17\" fill=\"#FFB0C8\" opacity=\"0.85\"/><circle cx=\"59.32\" cy=\"65\" r=\"2\" fill=\"#4A2A4C\"/><circle cx=\"58.62\" cy=\"64.2\" r=\"0.84\" fill=\"white\"/><path d=\"M 66.28,65.6 q 2.4,-3.2 4.8,0\" stroke=\"#4A2A4C\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 62.44,66.69 q 1.56,1.69 3.12,0\" stroke=\"#4A2A4C\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"56.72\" cy=\"66.82\" rx=\"1.95\" ry=\"1.17\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"71.28\" cy=\"66.82\" rx=\"1.95\" ry=\"1.17\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","4":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr4r\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#FF8A9C\"/><stop offset=\"1\" stop-color=\"#E02A4E\"/></radialGradient><linearGradient id=\"fr4l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr4bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr4halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#D6DBFB\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr4bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr4halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"88\" rx=\"24\" ry=\"3.3600000000000003\" fill=\"#8A5A9A\" opacity=\"0.16\"/><path d=\"M 50,85 C 29,75 21,52 27,42 C 33,32 67,32 73,42 C 79,52 71,75 50,85 Z\" fill=\"url(#fr4r)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"38\" cy=\"45\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"50\" cy=\"43\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"62\" cy=\"45\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"31\" cy=\"54\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"69\" cy=\"54\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"36\" cy=\"68\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"64\" cy=\"68\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"44\" cy=\"74\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"56\" cy=\"74\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"50\" cy=\"80\" rx=\"1.2\" ry=\"1.8\" fill=\"#FFE27A\"/><ellipse cx=\"34\" cy=\"46\" rx=\"5\" ry=\"2.6\" transform=\"rotate(-30 34 46)\" fill=\"white\" opacity=\"0.5\"/><g transform=\"translate(50,36) rotate(150)\"><path d=\"M 0,0 Q 6.5,-5.46 13,0 Q 6.5,5.46 0,0 Z\" fill=\"url(#fr4l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 1.95,0 L 10.4,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><g transform=\"translate(50,36) rotate(200)\"><path d=\"M 0,0 Q 6.5,-5.46 13,0 Q 6.5,5.46 0,0 Z\" fill=\"url(#fr4l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 1.95,0 L 10.4,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><g transform=\"translate(50,36) rotate(340)\"><path d=\"M 0,0 Q 6.5,-5.46 13,0 Q 6.5,5.46 0,0 Z\" fill=\"url(#fr4l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 1.95,0 L 10.4,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><g transform=\"translate(50,36) rotate(30)\"><path d=\"M 0,0 Q 6.5,-5.46 13,0 Q 6.5,5.46 0,0 Z\" fill=\"url(#fr4l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 1.95,0 L 10.4,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><g transform=\"translate(50,36) rotate(270)\"><path d=\"M 0,0 Q 6.5,-5.46 13,0 Q 6.5,5.46 0,0 Z\" fill=\"url(#fr4l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 1.95,0 L 10.4,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><path d=\"M 50,36 Q 51,29 55,24\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,36 Q 51,29 55,24\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><circle cx=\"40.64\" cy=\"58\" r=\"2.99\" fill=\"#4A2A4C\"/><circle cx=\"39.5935\" cy=\"56.804\" r=\"1.2558\" fill=\"white\"/><circle cx=\"59.36\" cy=\"58\" r=\"2.99\" fill=\"#4A2A4C\"/><circle cx=\"58.3135\" cy=\"56.804\" r=\"1.2558\" fill=\"white\"/><path d=\"M 46.88,61.38 q 3.12,3.38 6.24,0\" stroke=\"#4A2A4C\" stroke-width=\"1.69\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"35.44\" cy=\"61.64\" rx=\"3.9\" ry=\"2.34\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"64.56\" cy=\"61.64\" rx=\"3.9\" ry=\"2.34\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","8":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr8g\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#D2AEFF\"/><stop offset=\"1\" stop-color=\"#7B4FD0\"/></radialGradient><linearGradient id=\"fr8l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr8bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr8halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#CFE3FB\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr8bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr8halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"90\" rx=\"22\" ry=\"3.08\" fill=\"#8A5A9A\" opacity=\"0.16\"/><path d=\"M 50,32 Q 50,24 54,19\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,32 Q 50,24 54,19\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><g transform=\"translate(52,25) rotate(-30)\"><path d=\"M 0,0 Q 9,-7.56 18,0 Q 9,7.56 0,0 Z\" fill=\"url(#fr8l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.6999999999999997,0 L 14.4,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><circle cx=\"34\" cy=\"40\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"31\" cy=\"36.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 31 36.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"50\" cy=\"38\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"47\" cy=\"34.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 47 34.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"66\" cy=\"40\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"63\" cy=\"36.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 63 36.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"36\" cy=\"54\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"33\" cy=\"50.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 33 50.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"50\" cy=\"53\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"47\" cy=\"49.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 47 49.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"64\" cy=\"54\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"61\" cy=\"50.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 61 50.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"42\" cy=\"67\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"39\" cy=\"63.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 39 63.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"58\" cy=\"67\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"55\" cy=\"63.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 55 63.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"50\" cy=\"79\" r=\"9\" fill=\"url(#fr8g)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"47\" cy=\"75.5\" rx=\"2.4\" ry=\"1.3\" transform=\"rotate(-30 47 75.5)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"40.64\" cy=\"54\" r=\"2.99\" fill=\"#4A2A4C\"/><circle cx=\"39.5935\" cy=\"52.804\" r=\"1.2558\" fill=\"white\"/><circle cx=\"59.36\" cy=\"54\" r=\"2.99\" fill=\"#4A2A4C\"/><circle cx=\"58.3135\" cy=\"52.804\" r=\"1.2558\" fill=\"white\"/><path d=\"M 46.88,57.38 q 3.12,3.38 6.24,0\" stroke=\"#4A2A4C\" stroke-width=\"1.69\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"35.44\" cy=\"57.64\" rx=\"3.9\" ry=\"2.34\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"64.56\" cy=\"57.64\" rx=\"3.9\" ry=\"2.34\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","16":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><linearGradient id=\"fr16y\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFF6A6\"/><stop offset=\"1\" stop-color=\"#FFD23F\"/></linearGradient><linearGradient id=\"fr16l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr16bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr16halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#CDEFF2\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr16bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr16halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"86\" rx=\"28\" ry=\"3.9200000000000004\" fill=\"#8A5A9A\" opacity=\"0.16\"/><ellipse cx=\"23\" cy=\"63\" rx=\"5\" ry=\"3.6\" transform=\"rotate(-12 23 63)\" fill=\"#FFD84A\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"77\" cy=\"52\" rx=\"5\" ry=\"3.6\" transform=\"rotate(-12 77 52)\" fill=\"#FFD84A\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"50\" cy=\"58\" rx=\"28\" ry=\"21\" transform=\"rotate(-12 50 58)\" fill=\"url(#fr16y)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"38\" cy=\"47\" rx=\"7\" ry=\"3\" transform=\"rotate(-30 38 47)\" fill=\"white\" opacity=\"0.5\"/><g transform=\"translate(64,40) rotate(-40)\"><path d=\"M 0,0 Q 8.5,-7.14 17,0 Q 8.5,7.14 0,0 Z\" fill=\"url(#fr16l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.55,0 L 13.600000000000001,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><path d=\"M 62,41 q 1,-4 4,-6\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 62,41 q 1,-4 4,-6\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><circle cx=\"41.36\" cy=\"59\" r=\"2.7600000000000002\" fill=\"#4A2A4C\"/><circle cx=\"40.394\" cy=\"57.896\" r=\"1.1592\" fill=\"white\"/><circle cx=\"58.64\" cy=\"59\" r=\"2.7600000000000002\" fill=\"#4A2A4C\"/><circle cx=\"57.674\" cy=\"57.896\" r=\"1.1592\" fill=\"white\"/><path d=\"M 47.12,62.12 q 2.88,3.12 5.76,0\" stroke=\"#4A2A4C\" stroke-width=\"1.56\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"36.56\" cy=\"62.36\" rx=\"3.5999999999999996\" ry=\"2.16\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"63.44\" cy=\"62.36\" rx=\"3.5999999999999996\" ry=\"2.16\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","32":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr32o\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#FFCB80\"/><stop offset=\"1\" stop-color=\"#FF8A2A\"/></radialGradient><linearGradient id=\"fr32l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr32bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr32halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#D3F2D6\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr32bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr32halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"88\" rx=\"28\" ry=\"3.9200000000000004\" fill=\"#8A5A9A\" opacity=\"0.16\"/><circle cx=\"50\" cy=\"58\" r=\"28\" fill=\"url(#fr32o)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"36\" cy=\"46\" r=\"0.9\" fill=\"#D9661A\" opacity=\"0.4\"/><circle cx=\"62\" cy=\"42\" r=\"0.9\" fill=\"#D9661A\" opacity=\"0.4\"/><circle cx=\"70\" cy=\"62\" r=\"0.9\" fill=\"#D9661A\" opacity=\"0.4\"/><circle cx=\"32\" cy=\"66\" r=\"0.9\" fill=\"#D9661A\" opacity=\"0.4\"/><circle cx=\"56\" cy=\"78\" r=\"0.9\" fill=\"#D9661A\" opacity=\"0.4\"/><circle cx=\"44\" cy=\"80\" r=\"0.9\" fill=\"#D9661A\" opacity=\"0.4\"/><circle cx=\"68\" cy=\"74\" r=\"0.9\" fill=\"#D9661A\" opacity=\"0.4\"/><ellipse cx=\"38\" cy=\"44\" rx=\"7\" ry=\"3.4\" transform=\"rotate(-30 38 44)\" fill=\"white\" opacity=\"0.5\"/><path d=\"M 50,31 q 0,-5 2,-7\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,31 q 0,-5 2,-7\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><g transform=\"translate(51,29) rotate(-25)\"><path d=\"M 0,0 Q 9.5,-7.9799999999999995 19,0 Q 9.5,7.9799999999999995 0,0 Z\" fill=\"url(#fr32l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.85,0 L 15.200000000000001,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><circle cx=\"40.28\" cy=\"60\" r=\"3.105\" fill=\"#4A2A4C\"/><circle cx=\"39.19325\" cy=\"58.758\" r=\"1.3041\" fill=\"white\"/><circle cx=\"59.72\" cy=\"60\" r=\"3.105\" fill=\"#4A2A4C\"/><circle cx=\"58.63325\" cy=\"58.758\" r=\"1.3041\" fill=\"white\"/><path d=\"M 46.76,63.51 q 3.2399999999999998,3.5100000000000002 6.4799999999999995,0\" stroke=\"#4A2A4C\" stroke-width=\"1.7550000000000001\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"34.879999999999995\" cy=\"63.78\" rx=\"4.05\" ry=\"2.4299999999999997\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"65.12\" cy=\"63.78\" rx=\"4.05\" ry=\"2.4299999999999997\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","64":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr64a\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#FF9A9A\"/><stop offset=\"1\" stop-color=\"#DA2B3D\"/></radialGradient><linearGradient id=\"fr64l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr64bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr64halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#E6F4C6\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr64bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr64halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"88\" rx=\"30\" ry=\"4.2\" fill=\"#8A5A9A\" opacity=\"0.16\"/><path d=\"M 50,36 C 40,27 20,31 20,52 C 20,74 38,88 50,81 C 62,88 80,74 80,52 C 80,31 60,27 50,36 Z\" fill=\"url(#fr64a)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"33\" cy=\"45\" rx=\"6\" ry=\"3.4\" transform=\"rotate(-30 33 45)\" fill=\"white\" opacity=\"0.5\"/><path d=\"M 50,38 Q 49,30 53,22\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,38 Q 49,30 53,22\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><g transform=\"translate(52,30) rotate(-30)\"><path d=\"M 0,0 Q 9.5,-7.9799999999999995 19,0 Q 9.5,7.9799999999999995 0,0 Z\" fill=\"url(#fr64l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.85,0 L 15.200000000000001,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><circle cx=\"39.92\" cy=\"59\" r=\"3.22\" fill=\"#4A2A4C\"/><circle cx=\"38.793\" cy=\"57.712\" r=\"1.3524\" fill=\"white\"/><circle cx=\"60.08\" cy=\"59\" r=\"3.22\" fill=\"#4A2A4C\"/><circle cx=\"58.952999999999996\" cy=\"57.712\" r=\"1.3524\" fill=\"white\"/><path d=\"M 46.64,62.64 q 3.36,3.64 6.72,0\" stroke=\"#4A2A4C\" stroke-width=\"1.82\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"34.32\" cy=\"62.92\" rx=\"4.2\" ry=\"2.52\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"65.68\" cy=\"62.92\" rx=\"4.2\" ry=\"2.52\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","128":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr128p\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#FFE0B8\"/><stop offset=\"1\" stop-color=\"#FF8F8A\"/></radialGradient><linearGradient id=\"fr128l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr128bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr128halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#FFF3BC\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr128bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr128halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"88\" rx=\"30\" ry=\"4.2\" fill=\"#8A5A9A\" opacity=\"0.16\"/><path d=\"M 50,33 C 29,25 18,48 24,65 C 30,83 70,83 76,65 C 82,48 71,25 50,33 Z\" fill=\"url(#fr128p)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 50,34 Q 36,46 34,66\" fill=\"none\" stroke=\"#E0706F\" stroke-width=\"1.2\" opacity=\"0.5\" stroke-linecap=\"round\"/><ellipse cx=\"36\" cy=\"42\" rx=\"6\" ry=\"3\" transform=\"rotate(-30 36 42)\" fill=\"white\" opacity=\"0.5\"/><g transform=\"translate(50,32) rotate(-150)\"><path d=\"M 0,0 Q 8,-6.72 16,0 Q 8,6.72 0,0 Z\" fill=\"url(#fr128l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.4,0 L 12.8,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><g transform=\"translate(50,32) rotate(-35)\"><path d=\"M 0,0 Q 9.5,-7.9799999999999995 19,0 Q 9.5,7.9799999999999995 0,0 Z\" fill=\"url(#fr128l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.85,0 L 15.200000000000001,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><circle cx=\"43.28\" cy=\"60\" r=\"3.105\" fill=\"#4A2A4C\"/><circle cx=\"42.19325\" cy=\"58.758\" r=\"1.3041\" fill=\"white\"/><circle cx=\"62.72\" cy=\"60\" r=\"3.105\" fill=\"#4A2A4C\"/><circle cx=\"61.63325\" cy=\"58.758\" r=\"1.3041\" fill=\"white\"/><path d=\"M 49.76,63.51 q 3.2399999999999998,3.5100000000000002 6.4799999999999995,0\" stroke=\"#4A2A4C\" stroke-width=\"1.7550000000000001\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"37.879999999999995\" cy=\"63.78\" rx=\"4.05\" ry=\"2.4299999999999997\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"68.12\" cy=\"63.78\" rx=\"4.05\" ry=\"2.4299999999999997\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","256":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr256pr\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#F2FBB0\"/><stop offset=\"1\" stop-color=\"#A6D24E\"/></radialGradient><linearGradient id=\"fr256l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B6F08E\"/><stop offset=\"1\" stop-color=\"#5FC055\"/></linearGradient><radialGradient id=\"fr256bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr256halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#FFE3B8\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr256bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr256halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"90\" rx=\"28\" ry=\"3.9200000000000004\" fill=\"#8A5A9A\" opacity=\"0.16\"/><path d=\"M 50,26 C 41,26 39,37 39,44 C 28,50 24,63 28,73 C 33,86 67,86 72,73 C 76,63 72,50 61,44 C 61,37 59,26 50,26 Z\" fill=\"url(#fr256pr)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"38\" cy=\"56\" rx=\"5\" ry=\"3\" transform=\"rotate(-30 38 56)\" fill=\"white\" opacity=\"0.5\"/><path d=\"M 50,28 Q 50,19 54,14\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,28 Q 50,19 54,14\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><g transform=\"translate(53,19) rotate(-20)\"><path d=\"M 0,0 Q 8.5,-7.14 17,0 Q 8.5,7.14 0,0 Z\" fill=\"url(#fr256l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 2.55,0 L 13.600000000000001,0\" stroke=\"#3E8F43\" stroke-width=\"0.8\" opacity=\"0.6\"/></g><circle cx=\"40.64\" cy=\"66\" r=\"2.99\" fill=\"#4A2A4C\"/><circle cx=\"39.5935\" cy=\"64.804\" r=\"1.2558\" fill=\"white\"/><circle cx=\"59.36\" cy=\"66\" r=\"2.99\" fill=\"#4A2A4C\"/><circle cx=\"58.3135\" cy=\"64.804\" r=\"1.2558\" fill=\"white\"/><path d=\"M 46.88,69.38 q 3.12,3.38 6.24,0\" stroke=\"#4A2A4C\" stroke-width=\"1.69\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"35.44\" cy=\"69.64\" rx=\"3.9\" ry=\"2.34\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"64.56\" cy=\"69.64\" rx=\"3.9\" ry=\"2.34\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","512":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><linearGradient id=\"fr512pb\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\"1\" stop-color=\"#F2A93B\"/></linearGradient><linearGradient id=\"fr512l\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9BE57E\"/><stop offset=\"1\" stop-color=\"#3FA651\"/></linearGradient><clipPath id=\"fr512pc\"><ellipse cx=\"50\" cy=\"64\" rx=\"23\" ry=\"24\"/></clipPath><radialGradient id=\"fr512bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr512halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#FFD4B4\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr512bg)\"/><circle cx=\"50\" cy=\"58\" r=\"44\" fill=\"url(#fr512halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"90\" rx=\"26\" ry=\"3.6400000000000006\" fill=\"#8A5A9A\" opacity=\"0.16\"/><path d=\"M 45,44 Q 37,34 30,24 Q 43,34 55,44 Z\" fill=\"url(#fr512l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 45,44 Q 57,34 70,24 Q 63,34 55,44 Z\" fill=\"url(#fr512l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 45,44 Q 41,28 38,12 Q 47,28 55,44 Z\" fill=\"url(#fr512l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 45,44 Q 53,28 62,12 Q 59,28 55,44 Z\" fill=\"url(#fr512l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 44.5,44 Q 46.7,25 50,6 Q 53.3,25 55.5,44 Z\" fill=\"url(#fr512l)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"50\" cy=\"64\" rx=\"23\" ry=\"24\" fill=\"url(#fr512pb)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><g clip-path=\"url(#fr512pc)\"><path d=\"M -30,34 L 30,94 M 30,34 L -30,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M -21,34 L 39,94 M 39,34 L -21,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M -12,34 L 48,94 M 48,34 L -12,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M -3,34 L 57,94 M 57,34 L -3,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 6,34 L 66,94 M 66,34 L 6,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 15,34 L 75,94 M 75,34 L 15,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 24,34 L 84,94 M 84,34 L 24,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 33,34 L 93,94 M 93,34 L 33,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 42,34 L 102,94 M 102,34 L 42,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 51,34 L 111,94 M 111,34 L 51,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 60,34 L 120,94 M 120,34 L 60,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/><path d=\"M 69,34 L 129,94 M 129,34 L 69,94\" stroke=\"#C98A2E\" stroke-width=\"0.9\" opacity=\"0.55\"/></g><ellipse cx=\"50\" cy=\"64\" rx=\"23\" ry=\"24\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"39\" cy=\"50\" rx=\"5\" ry=\"2.6\" transform=\"rotate(-30 39 50)\" fill=\"white\" opacity=\"0.5\"/><circle cx=\"41\" cy=\"64\" r=\"2.875\" fill=\"#4A2A4C\"/><circle cx=\"39.99375\" cy=\"62.85\" r=\"1.2075\" fill=\"white\"/><circle cx=\"59\" cy=\"64\" r=\"2.875\" fill=\"#4A2A4C\"/><circle cx=\"57.99375\" cy=\"62.85\" r=\"1.2075\" fill=\"white\"/><path d=\"M 47,67.25 q 3,3.25 6,0\" stroke=\"#4A2A4C\" stroke-width=\"1.625\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"36\" cy=\"67.5\" rx=\"3.75\" ry=\"2.25\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"64\" cy=\"67.5\" rx=\"3.75\" ry=\"2.25\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","1024":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr1024m\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#EEFBC0\"/><stop offset=\"1\" stop-color=\"#A9D46A\"/></radialGradient><clipPath id=\"fr1024mc\"><circle cx=\"50\" cy=\"58\" r=\"32\"/></clipPath><radialGradient id=\"fr1024bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr1024halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#FFCFCB\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr1024bg)\"/><circle cx=\"50\" cy=\"58\" r=\"46\" fill=\"url(#fr1024halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"92\" rx=\"30\" ry=\"4.2\" fill=\"#8A5A9A\" opacity=\"0.16\"/><circle cx=\"50\" cy=\"58\" r=\"32\" fill=\"url(#fr1024m)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><g clip-path=\"url(#fr1024mc)\"><path d=\"M 26,22 Q 32,40 26,58 Q 20,76 26,94\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 38,22 Q 44,40 38,58 Q 32,76 38,94\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 50,22 Q 56,40 50,58 Q 44,76 50,94\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 62,22 Q 68,40 62,58 Q 56,76 62,94\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 74,22 Q 80,40 74,58 Q 68,76 74,94\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 16,36 Q 33,31 50,36 Q 67,41 84,36\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 16,48 Q 33,43 50,48 Q 67,53 84,48\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 16,60 Q 33,55 50,60 Q 67,65 84,60\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 16,72 Q 33,67 50,72 Q 67,77 84,72\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/><path d=\"M 16,84 Q 33,79 50,84 Q 67,89 84,84\" fill=\"none\" stroke=\"white\" stroke-width=\"1.3\" opacity=\"0.75\"/></g><circle cx=\"50\" cy=\"58\" r=\"32\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M 43,27 L 57,27 M 50,27 L 50,21\" stroke=\"#6B3F6E\" stroke-width=\"4.6\" stroke-linecap=\"round\"/><path d=\"M 43,27 L 57,27 M 50,27 L 50,21\" stroke=\"#9A6A3E\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><ellipse cx=\"37\" cy=\"41\" rx=\"8\" ry=\"4\" transform=\"rotate(-30 37 41)\" fill=\"white\" opacity=\"0.5\"/><ellipse cx=\"50\" cy=\"63\" rx=\"16\" ry=\"10\" fill=\"white\" opacity=\"0.3\"/><circle cx=\"39.92\" cy=\"62\" r=\"3.22\" fill=\"#4A2A4C\"/><circle cx=\"38.793\" cy=\"60.712\" r=\"1.3524\" fill=\"white\"/><circle cx=\"60.08\" cy=\"62\" r=\"3.22\" fill=\"#4A2A4C\"/><circle cx=\"58.952999999999996\" cy=\"60.712\" r=\"1.3524\" fill=\"white\"/><path d=\"M 46.64,65.64 q 3.36,3.64 6.72,0\" stroke=\"#4A2A4C\" stroke-width=\"1.82\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"34.32\" cy=\"65.92\" rx=\"4.2\" ry=\"2.52\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"65.68\" cy=\"65.92\" rx=\"4.2\" ry=\"2.52\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>","2048":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><radialGradient id=\"fr2048wm\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#A6EC86\"/><stop offset=\"1\" stop-color=\"#43AE55\"/></radialGradient><clipPath id=\"fr2048wmc\"><circle cx=\"50\" cy=\"58\" r=\"35\"/></clipPath><radialGradient id=\"fr2048bg\" cx=\"50%\" cy=\"45%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient>\n<radialGradient id=\"fr2048halo\"><stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.75\"/><stop offset=\"0.6\" stop-color=\"#FFFFFF\" stop-opacity=\"0.3375\"/><stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"100\" height=\"100\" fill=\"#FFC2DE\"/><rect width=\"100\" height=\"100\" fill=\"url(#fr2048bg)\"/><circle cx=\"50\" cy=\"58\" r=\"46\" fill=\"url(#fr2048halo)\"/><path d=\"M 14,77 Q 14,80 17,80 Q 14,80 14,83 Q 14,80 11,80 Q 14,80 14,77 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 88,29.6 Q 88,32 90.4,32 Q 88,32 88,34.4 Q 88,32 85.6,32 Q 88,32 88,29.6 Z\" fill=\"#FFFFFF\" opacity=\"0.85\"/><path d=\"M 82,82.8 Q 82,86 85.2,86 Q 82,86 82,89.2 Q 82,86 78.8,86 Q 82,86 82,82.8 Z\" fill=\"#FFFFFF\" opacity=\"0.9\"/><path d=\"M 20,32 Q 20,34 22,34 Q 20,34 20,36 Q 20,34 18,34 Q 20,34 20,32 Z\" fill=\"#FFFFFF\" opacity=\"0.75\"/><circle cx=\"10\" cy=\"56\" r=\"1.1\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"92\" cy=\"60\" r=\"1.3\" fill=\"#FFFFFF\" opacity=\"0.7\"/><circle cx=\"70\" cy=\"14\" r=\"1\" fill=\"#FFFFFF\" opacity=\"0.6\"/><ellipse cx=\"50\" cy=\"92\" rx=\"32\" ry=\"4.48\" fill=\"#8A5A9A\" opacity=\"0.16\"/><circle cx=\"50\" cy=\"58\" r=\"35\" fill=\"url(#fr2048wm)\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><g clip-path=\"url(#fr2048wmc)\"><path d=\"M 24,18 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4\" fill=\"none\" stroke=\"#2A8A40\" stroke-width=\"3.6\" stroke-linejoin=\"round\" opacity=\"0.8\"/><path d=\"M 37,18 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4\" fill=\"none\" stroke=\"#2A8A40\" stroke-width=\"3.6\" stroke-linejoin=\"round\" opacity=\"0.8\"/><path d=\"M 50,18 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4\" fill=\"none\" stroke=\"#2A8A40\" stroke-width=\"3.6\" stroke-linejoin=\"round\" opacity=\"0.8\"/><path d=\"M 63,18 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4\" fill=\"none\" stroke=\"#2A8A40\" stroke-width=\"3.6\" stroke-linejoin=\"round\" opacity=\"0.8\"/><path d=\"M 76,18 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4 l 3,4 l -3,4\" fill=\"none\" stroke=\"#2A8A40\" stroke-width=\"3.6\" stroke-linejoin=\"round\" opacity=\"0.8\"/></g><circle cx=\"50\" cy=\"58\" r=\"35\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"36\" cy=\"38\" rx=\"9\" ry=\"4.5\" transform=\"rotate(-30 36 38)\" fill=\"white\" opacity=\"0.5\"/><path d=\"M 50,24 q 2,-7 8,-6\" fill=\"none\" stroke=\"#6B3F6E\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><path d=\"M 50,24 q 2,-7 8,-6\" fill=\"none\" stroke=\"#9A6A3E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><ellipse cx=\"50\" cy=\"62\" rx=\"17\" ry=\"11\" fill=\"white\" opacity=\"0.28\"/><circle cx=\"39.2\" cy=\"61\" r=\"3.45\" fill=\"#4A2A4C\"/><circle cx=\"37.9925\" cy=\"59.62\" r=\"1.449\" fill=\"white\"/><circle cx=\"60.8\" cy=\"61\" r=\"3.45\" fill=\"#4A2A4C\"/><circle cx=\"59.592499999999994\" cy=\"59.62\" r=\"1.449\" fill=\"white\"/><path d=\"M 46.4,64.9 q 3.5999999999999996,3.9000000000000004 7.199999999999999,0\" stroke=\"#4A2A4C\" stroke-width=\"1.9500000000000002\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"33.2\" cy=\"65.2\" rx=\"4.5\" ry=\"2.6999999999999997\" fill=\"#FFB0C8\" opacity=\"0.85\"/><ellipse cx=\"66.8\" cy=\"65.2\" rx=\"4.5\" ry=\"2.6999999999999997\" fill=\"#FFB0C8\" opacity=\"0.85\"/></svg>"};
+  const ALL = [[2, "Cherry", "#E3D4FA"], [4, "Strawberry", "#D6DBFB"], [8, "Grape", "#CFE3FB"], [16, "Lemon", "#CDEFF2"], [32, "Orange", "#D3F2D6"], [64, "Apple", "#E6F4C6"],
+    [128, "Peach", "#FFF3BC"], [256, "Pear", "#FFE3B8"], [512, "Pineapple", "#FFD4B4"], [1024, "Melon", "#FFCFCB"], [2048, "Watermelon", "#FFC2DE"]];
+  const svgURL = s => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
+  const $ = id => document.getElementById(id);
+
+  // ---------- the game's own audio pieces (same numbers as game.js) ----------
+  const NZ = new WeakMap(), PB = new WeakMap(), VB = new WeakMap(), VG = new WeakMap();
+  function noise(c) { if (!NZ.has(c)) { const b = c.createBuffer(1, Math.floor(c.sampleRate * 0.1), c.sampleRate), d = b.getChannelData(0); for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1; NZ.set(c, b); } return NZ.get(c); }
+  // Each output gets the game's room: a small reverb next to the dry signal
+  function verb(c, o) {
+    if (VB.has(o)) return VB.get(o);
+    const cv = c.createConvolver(), n = Math.floor(c.sampleRate * 1.8), ir = c.createBuffer(2, n, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 3); }
+    cv.buffer = ir; const vg = c.createGain(); vg.gain.value = 0.45; cv.connect(vg); vg.connect(o); VB.set(o, cv); VG.set(o, vg); return cv;
+  }
+  function route(c, o, node, send, pan) {
+    if (pan && c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = pan; node.connect(p); node = p; }
+    node.connect(o);
+    if (send) { const s = c.createGain(); s.gain.value = send; node.connect(s); s.connect(verb(c, o)); }
+  }
+  function tone(c, o, t, { f, type = "sine", vol = 0.1, a = 0.005, d = 0.3, lp = null, send = 0, pan = 0 }) {
+    const osc = c.createOscillator(), g = c.createGain(); osc.type = type; osc.frequency.setValueAtTime(f, t);
+    let last = osc;
+    if (lp) { const fl = c.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = lp; osc.connect(fl); last = fl; }
+    last.connect(g); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0005, t + a + d);
+    route(c, o, g, send, pan); osc.start(t); osc.stop(t + a + d + 0.05);
+  }
+  function tap(c, o, t, vol) {
+    const src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); src.buffer = noise(c);
+    fl.type = "bandpass"; fl.frequency.value = 700; fl.Q.value = 1; src.connect(fl); fl.connect(g);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.01); route(c, o, g, 0); src.start(t); src.stop(t + 0.05);
+  }
+  const STEPS = [0, 2, 4, 7, 9];
+  const note = i => { const o = Math.floor(i / 5), s = STEPS[((i % 5) + 5) % 5]; return 261.63 * Math.pow(2, o + s / 12); };
+  const mergeStep = v => Math.min(Math.max(Math.floor((Math.log2(v || 4) - 2) / 2), 0), 4);
+
+  const SLIDE_DIRS = { left: { pan: -0.45, tilt: 1, gain: 1.45 }, right: { pan: 0.45, tilt: 1, gain: 1.45 }, up: { pan: 0, tilt: 1.12, gain: 1 }, down: { pan: 0, tilt: 0.88, gain: 1.12 } };
+  function paperSwipe(c, o, t, dir) {
+    if (!PB.has(c)) {
+      const b = c.createBuffer(1, Math.floor(c.sampleRate * 0.25), c.sampleRate), d = b.getChannelData(0), grain = Math.floor(c.sampleRate * 0.004); let level = 1;
+      for (let k = 0; k < d.length; k++) { if (k % grain === 0) level = 0.45 + Math.random() * 0.55; d[k] = (Math.random() * 2 - 1) * level; }
+      PB.set(c, b);
+    }
+    const { pan, tilt, gain } = SLIDE_DIRS[dir] || SLIDE_DIRS.left, len = 0.15, w = (0.9 + Math.random() * 0.2) * tilt, vol = 0.0126 * gain;
+    const src = c.createBufferSource(), hp = c.createBiquadFilter(), bp = c.createBiquadFilter(), g = c.createGain(); src.buffer = PB.get(c);
+    hp.type = "highpass"; hp.frequency.value = 900; bp.type = "bandpass"; bp.Q.value = 0.7;
+    bp.frequency.setValueAtTime(2200 * w, t); bp.frequency.linearRampToValueAtTime(3600 * w, t + len);
+    src.connect(hp); hp.connect(bp); bp.connect(g);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.035); g.gain.linearRampToValueAtTime(vol * 0.61, t + len * 0.6); g.gain.exponentialRampToValueAtTime(0.0005, t + len);
+    route(c, o, g, 0.05, pan); src.start(t); src.stop(t + len + 0.02);
+  }
+  // The current merge (the one you kept) and the new-fruit phrase, exactly as in the game
+  function kalimbaMerge(c, o, t, v) {
+    const f = note(-3 + mergeStep(v)) * (0.99 + Math.random() * 0.02);
+    tone(c, o, t, { f, type: "triangle", vol: 0.06, a: 0.002, d: 0.06, lp: Math.max(500, f * 3) });
+    tone(c, o, t, { f: f * 2, vol: 0.042, a: 0.002, d: 0.045, lp: 1600 });
+    tap(c, o, t, 0.016);
+  }
+  function kalimba(c, o, t, f, vol, send = 0.15) { tone(c, o, t, { f, type: "triangle", vol, a: 0.003, d: 0.5, lp: 2200, send }); tone(c, o, t, { f: f * 2, vol: vol * 0.3, a: 0.002, d: 0.15, send }); }
+  function newFruit(c, o, t, value) {
+    const L = Math.min(Math.max(Math.log2(value) - 5, -3), 6), b = 2 + L;
+    const phrase = L >= 6 ? [[b, 1], [b + 2, 1], [b + 1, 1], [b + 3, 1], [b + 5, 3]] : [[b, 1], [b + 2, 1], [b + 1, 1], [b + 3, 2]];
+    let at = t;
+    phrase.forEach(([i, beats], k) => { const last = k === phrase.length - 1; kalimba(c, o, at, note(i), last ? 0.1035 : 0.09, 0.2); if (!last) at += beats * 0.14; });
+    if (L >= 5) kalimba(c, o, at, note(phrase[phrase.length - 1][0] - 5), 0.05, 0.3);
+    if (L >= 6) [b - 5, b - 3, b - 2, b].forEach((i, k) => kalimba(c, o, at + 0.02 + k * 0.03, note(i), 0.045, 0.4));
+  }
+
+  // ---------- music instruments, all synthesised like the game's sounds ----------
+  const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+  function bell(c, o, t, f, v, d = 1.2, pan = 0) {
+    tone(c, o, t, { f, vol: v, a: 0.002, d, send: 0.35, pan });
+    tone(c, o, t, { f: f * 2, vol: v * 0.28, a: 0.001, d: d * 0.35, send: 0.35, pan });
+    tone(c, o, t, { f: f * 3, vol: v * 0.1, a: 0.001, d: d * 0.15, send: 0.35, pan });
+  }
+  function marimba(c, o, t, f, v, pan = 0) {
+    tone(c, o, t, { f, vol: v, a: 0.002, d: 0.38, send: 0.18, pan });
+    tone(c, o, t, { f: f * 4, vol: v * 0.22, a: 0.001, d: 0.035, send: 0.18, pan });
+  }
+  // A plucked string: a bright saw that closes down quickly, ukulele-ish
+  function pluck(c, o, t, f, v, pan = 0) {
+    const s = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain(); s.type = "sawtooth"; s.frequency.value = f;
+    fl.type = "lowpass"; fl.Q.value = 0.8; fl.frequency.setValueAtTime(f * 8, t); fl.frequency.exponentialRampToValueAtTime(f * 1.5, t + 0.25);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.7);
+    s.connect(fl); fl.connect(g); route(c, o, g, 0.15, pan); s.start(t); s.stop(t + 0.75);
+  }
+  // A soft electric piano: one sine bending another, the bend fading as the note rings
+  function epiano(c, o, t, f, v, d = 1.6, pan = 0) {
+    const car = c.createOscillator(), mod = c.createOscillator(), mg = c.createGain(), g = c.createGain();
+    car.frequency.value = f; mod.frequency.value = f;
+    mg.gain.setValueAtTime(f * 1.1, t); mg.gain.exponentialRampToValueAtTime(f * 0.04, t + 0.5);
+    mod.connect(mg); mg.connect(car.frequency); car.connect(g);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0005, t + d);
+    route(c, o, g, 0.22, pan); car.start(t); mod.start(t); car.stop(t + d + 0.05); mod.stop(t + d + 0.05);
+  }
+  function pad(c, o, t, notes, vol, len) {
+    notes.forEach(m => [-7, 7].forEach(det => {
+      const s = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain(); s.type = "triangle"; s.frequency.value = mf(m); s.detune.value = det;
+      fl.type = "lowpass"; fl.frequency.value = 900;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.6, len * 0.3)); g.gain.setValueAtTime(vol, t + len * 0.75); g.gain.linearRampToValueAtTime(0, t + len + 0.3);
+      s.connect(fl); fl.connect(g); route(c, o, g, 0.3, det < 0 ? -0.3 : 0.3); s.start(t); s.stop(t + len + 0.35);
+    }));
+  }
+  function kick(c, o, t, v) {
+    const s = c.createOscillator(), g = c.createGain(); s.frequency.setValueAtTime(130, t); s.frequency.exponentialRampToValueAtTime(48, t + 0.12);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.3);
+    s.connect(g); route(c, o, g, 0); s.start(t); s.stop(t + 0.32);
+  }
+  function hit(c, o, t, v, type, f, q, dec, send = 0, pan = 0) {
+    const src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); src.buffer = noise(c);
+    fl.type = type; fl.frequency.value = f; fl.Q.value = q; src.connect(fl); fl.connect(g);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dec);
+    route(c, o, g, send, pan); src.start(t, Math.random() * 0.05); src.stop(t + dec + 0.02);
+  }
+  const shaker = (c, o, t, v) => hit(c, o, t, v, "highpass", 7000, 0.7, 0.035, 0, 0.25);
+  const snap = (c, o, t, v) => hit(c, o, t, v, "bandpass", 1900, 1.2, 0.07, 0.25, -0.1);
+  const brush = (c, o, t, v) => hit(c, o, t, v, "bandpass", 1400, 0.8, 0.11, 0.2, -0.1);
+  const strum = (c, o, t, notes, v, up) => (up ? [...notes].reverse() : notes).forEach((m, i, ns) => pluck(c, o, t + i * 0.011, mf(m), up ? v * 0.7 : v, (i / (ns.length - 1) - 0.5) * 0.3));
+
+  // ---------- chords and the tune ----------
+  // root = bass note; tones = the chord as played in the middle
+  const CH = {
+    C: { root: 48, tones: [60, 64, 67] }, Am: { root: 45, tones: [57, 60, 64] }, F: { root: 41, tones: [57, 60, 65] },
+    G: { root: 43, tones: [59, 62, 67] }, Em: { root: 40, tones: [55, 59, 64] },
+    Fmaj7: { root: 41, tones: [53, 57, 60, 64] }, Em7: { root: 40, tones: [52, 55, 59, 62] }, Dm7: { root: 38, tones: [50, 53, 57, 60] }, Cmaj7: { root: 36, tones: [48, 52, 55, 59] }
+  };
+  const PROGS = {
+    "C Am F G": "Sweet and classic",
+    "F G Em Am": "Royal road, J-pop and K-pop",
+    "C G Am F": "Bright and singalong",
+    "Am F C G": "A little wistful",
+    "Fmaj7 Em7 Dm7 Cmaj7": "Dreamy sevenths"
+  };
+  // The game's scale (C D E G A), G2 up to C8; the tune only uses these notes
+  const PENTA = []; for (let m = 43; m <= 108; m++) if ([0, 2, 4, 7, 9].includes(m % 12)) PENTA.push(m);
+  const PI = m => PENTA.findIndex(x => x >= m);
+  function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+
+  // A two-bar phrase: notes at 16th-note positions, walking up and down the scale in small steps
+  function phrase(r, sp) {
+    let idx = Math.round((sp.lo + sp.hi) / 2 + (r() - 0.5) * 3); const out = [];
+    for (let b = 0; b < 2; b++) {
+      const rh = sp.rhythms[Math.floor(r() * sp.rhythms.length)];
+      rh.forEach((pos, i) => {
+        if ((b || i) && r() < sp.rest) return;
+        idx = clamp(idx + [-2, -1, -1, 0, 1, 1, 2][Math.floor(r() * 7)], sp.lo, sp.hi);
+        out.push({ bar: b, pos, idx });
+      });
+    }
+    return out;
+  }
+  function vary(r, ph, sp, n) {
+    const out = ph.map(x => ({ ...x }));
+    for (let k = 0; k < n && out.length; k++) { const x = out[Math.floor(r() * out.length)]; x.idx = clamp(x.idx + (r() < 0.5 ? -1 : 1), sp.lo, sp.hi); }
+    return out;
+  }
+  // Eight bars as A A' B A-ending; every eight bars A shifts a little and B is new, so it never loops exactly
+  class Tune {
+    constructor(sp, seed) { this.sp = sp; this.r = rng(seed); this.A = phrase(this.r, sp); this.cycle(); }
+    cycle() {
+      const { r, sp } = this;
+      if (this.done) this.A = vary(r, this.A, sp, 2);
+      this.done = true;
+      const B = phrase(r, sp), end = this.A.filter(x => x.bar === 0 || x.pos <= 8);
+      this.parts = [this.A, vary(r, this.A, sp, 1), B, end];
+    }
+    bar(k, ch) {
+      if (k % 8 === 0 && k > 0) this.cycle();
+      const part = this.parts[Math.floor((k % 8) / 2)], half = k % 2;
+      const notes = part.filter(x => x.bar === half);
+      const pcs = new Set([ch.root % 12, ...ch.tones.map(m => m % 12)]);
+      return notes.map((x, i) => {
+        let idx = x.idx;
+        // strong beats and phrase ends land on a note of the chord
+        if (x.pos === 0 || x.pos === 8 || (half === 1 && i === notes.length - 1)) {
+          for (const d of [0, -1, 1, -2, 2]) { const j = idx + d; if (j >= this.sp.lo && j <= this.sp.hi && pcs.has(PENTA[j] % 12)) { idx = j; break; } }
+        }
+        const next = notes[i + 1] ? notes[i + 1].pos : 16;
+        return { pos: x.pos, midi: PENTA[idx], len: next - x.pos };
+      });
+    }
+  }
+
+  // The instrument that plays the tune; any style can use any of them
+  const LEADS = {
+    bells: ["Music-box bells", (c, o, t, f, v) => bell(c, o, t, f, v, 1.3, -0.15)],
+    glock: ["Glockenspiel", (c, o, t, f, v) => bell(c, o, t, f, v * 0.95, 0.7, -0.2)],
+    marimba: ["Marimba", (c, o, t, f, v) => marimba(c, o, t, f, v * 1.05, -0.1)],
+    epiano: ["Electric piano", (c, o, t, f, v) => epiano(c, o, t, f, v * 0.7, 1.2, 0.2)],
+    uke: ["Ukulele pluck", (c, o, t, f, v) => pluck(c, o, t, f, v * 0.6, -0.1)],
+    kalimba: ["Kalimba", (c, o, t, f, v) => kalimba(c, o, t, f, v * 1.1, 0.2)]
+  };
+  const PARTS = [["tune", "Tune"], ["chords", "Chords"], ["bass", "Bass"], ["drums", "Drums"]];
+
+  // ---------- the four styles ----------
+  // Each bar() checks X.on so every part can be switched off on its own
+  const STYLES = [
+    { id: "none", letter: "–", name: "No music", sub: "The game as it is today", color: "#CDEFF2", bpm: 0,
+      blurb: "Just your current swipes, merges and new-fruit tunes. Players listen to their own music or podcast over the top.",
+      parts: [["Music", "none"], ["Good for", "players who bring their own music"]] },
+    { id: "box", letter: "A", name: "Picnic music box", sub: "Slow and sweet, a lullaby", color: "#E3D4FA", bpm: 76, swing: 0, prog: "C Am F G", lead: "bells", noDrums: true,
+      loM: 72, hiM: 86, rest: 0.12, rhythms: [[0, 4, 8, 12], [0, 6, 8, 12], [0, 4, 6, 8], [0, 8, 12], [0, 4, 8, 10, 12]],
+      blurb: "Music-box bells over a soft hum, with a little arpeggio twinkling between the notes. The calmest of the four, the most \"kawaii nursery\".",
+      parts: [["Tune", "music-box bells"], ["Chords", "soft pad and a twinkle arpeggio"], ["Bass", "low bells"], ["Drums", "none"]],
+      bar(c, o, t, X) {
+        const { ch, tt, beat, mel, on } = X;
+        if (on.chords) { pad(c, o, t, ch.tones, 0.006, 4 * beat); [2, 6, 10, 14].forEach((p, i) => bell(c, o, tt(p), mf(ch.tones[[0, 1, 2, 1][i]] + 12), 0.013, 0.9, 0.35)); }
+        if (on.bass) { tone(c, o, t, { f: mf(ch.root), vol: 0.05, a: 0.004, d: 1.8, send: 0.2 }); tone(c, o, tt(8), { f: mf(ch.root + 7), vol: 0.03, a: 0.004, d: 1.2, send: 0.2 }); }
+        if (on.tune) mel.forEach(n => X.lead(c, o, tt(n.pos), mf(n.midi)));
+      } },
+    { id: "pop", letter: "B", name: "Bubble pop", sub: "Bouncy, the most K-pop", color: "#FFC2DE", bpm: 112, swing: 0, prog: "F G Em Am", lead: "marimba",
+      loM: 72, hiM: 88, rest: 0.08, rhythms: [[0, 3, 6, 8, 10, 12], [0, 2, 4, 7, 10, 12], [2, 4, 6, 10, 12, 14], [0, 3, 6, 10], [0, 2, 3, 6, 8, 12]],
+      blurb: "Marimba hook, plucky bass and a soft, light beat, with a sparkle every fourth bar. It starts on the \"royal road\" chords (F, G, Em, Am) behind a lot of J-pop and K-pop.",
+      parts: [["Tune", "marimba, sparkles every fourth bar"], ["Chords", "marimba stabs"], ["Bass", "pizzicato"], ["Drums", "soft kick, finger snaps, shaker"]],
+      bar(c, o, t, X) {
+        const { ch, tt, mel, k, r, on } = X;
+        if (on.drums) {
+          kick(c, o, tt(0), 0.12); kick(c, o, tt(8), 0.1); if (r() < 0.5) kick(c, o, tt(10), 0.06);
+          snap(c, o, tt(4), 0.03); snap(c, o, tt(12), 0.03);
+          for (let p = 0; p < 16; p += 2) shaker(c, o, tt(p), p % 4 === 2 ? 0.011 : 0.006);
+        }
+        if (on.bass) [[0, 0], [3, 0], [8, 7], [11, 12]].forEach(([p, s]) => tone(c, o, tt(p), { f: mf(ch.root + s), type: "triangle", vol: 0.06, a: 0.004, d: 0.16, lp: 600 }));
+        if (on.chords) [6, 14].forEach(p => ch.tones.forEach(m => marimba(c, o, tt(p), mf(m + 12), 0.011, 0.25)));
+        if (on.tune) {
+          mel.forEach(n => X.lead(c, o, tt(n.pos), mf(n.midi)));
+          if (k % 4 === 3) [0, 2, 4, 7].forEach((s, i) => bell(c, o, tt(12) + i * 0.045, mf(84 + s), 0.012, 0.6, 0.4));
+        }
+      } },
+    { id: "popamb", letter: "B2", name: "Bubble pop, ambient", sub: "Same song, floating", color: "#F9D3EC", bpm: 90, swing: 0, prog: "F G Em Am", lead: "marimba", room: 75,
+      loM: 72, hiM: 86, rest: 0.4, rhythms: [[0, 3, 6, 8, 10, 12], [0, 2, 4, 7, 10, 12], [2, 4, 6, 10, 12, 14], [0, 3, 6, 10], [0, 2, 3, 6, 8, 12]],
+      blurb: "Bubble pop slowed down and opened up: a warm pad under the chords, a gentle bass that holds, fewer tune notes that echo back softly, and only a whisper of a beat.",
+      parts: [["Tune", "marimba with soft echoes, sparkles every second bar"], ["Chords", "warm pad and quiet marimba stabs"], ["Bass", "long, soft notes"], ["Drums", "a light shaker and a soft heartbeat kick"]],
+      bar(c, o, t, X) {
+        const { ch, tt, beat, mel, k, on } = X;
+        if (on.drums) { kick(c, o, tt(0), 0.05); for (let p = 2; p < 16; p += 4) shaker(c, o, tt(p), 0.005); }
+        if (on.bass) { tone(c, o, tt(0), { f: mf(ch.root), vol: 0.045, a: 0.03, d: 2.2, send: 0.25 }); tone(c, o, tt(8), { f: mf(ch.root + 7), vol: 0.025, a: 0.03, d: 1.4, send: 0.25 }); }
+        if (on.chords) { pad(c, o, t, ch.tones, 0.009, 4 * beat); [6, 14].forEach(p => ch.tones.forEach(m => marimba(c, o, tt(p), mf(m + 12), 0.006, 0.3))); }
+        if (on.tune) {
+          // each note comes back a dotted eighth later, quieter, from the other side
+          mel.forEach(n => { X.lead(c, o, tt(n.pos), mf(n.midi)); X.lead(c, o, tt(n.pos) + 3 * beat / 4, mf(n.midi), 0.35); });
+          if (k % 2 === 1) [0, 2, 4, 7, 9].forEach((s, i) => bell(c, o, tt(8) + i * 0.08, mf(84 + s), 0.009, 1.2, 0.4));
+        }
+      } },
+    { id: "sunny", letter: "C", name: "Sunny day", sub: "Ukulele and glockenspiel", color: "#FFE3B8", bpm: 96, swing: 0, prog: "C G Am F", lead: "glock",
+      loM: 72, hiM: 86, rest: 0.1, rhythms: [[0, 4, 6, 8, 12], [0, 2, 4, 8, 10], [0, 6, 8, 12, 14], [0, 4, 8, 12]],
+      blurb: "A ukulele strumming a happy down-down-up pattern, with a glockenspiel tune on top. Relaxed and outdoorsy, like an actual picnic.",
+      parts: [["Tune", "glockenspiel"], ["Chords", "ukulele strum"], ["Bass", "round and low"], ["Drums", "a quiet shaker"]],
+      bar(c, o, t, X) {
+        const { ch, tt, mel, on } = X;
+        if (on.chords) [[0, 0], [4, 0], [6, 1], [10, 1], [12, 0], [14, 1]].forEach(([p, up]) => strum(c, o, tt(p), ch.tones.map(m => m + 12), 0.02, up));
+        if (on.bass) { tone(c, o, tt(0), { f: mf(ch.root), type: "triangle", vol: 0.05, a: 0.006, d: 0.5, lp: 500 }); tone(c, o, tt(8), { f: mf(ch.root + 7), type: "triangle", vol: 0.04, a: 0.006, d: 0.5, lp: 500 }); }
+        if (on.drums) for (let p = 0; p < 16; p += 2) shaker(c, o, tt(p), 0.005);
+        if (on.tune) mel.forEach(n => X.lead(c, o, tt(n.pos), mf(n.midi)));
+      } },
+    { id: "lofi", letter: "D", name: "Soda lo-fi", sub: "Cosy keys and soft crackle", color: "#D3F2D6", bpm: 80, swing: 0.33, prog: "Fmaj7 Em7 Dm7 Cmaj7", lead: "epiano",
+      loM: 67, hiM: 81, rest: 0.25, rhythms: [[0, 6, 10], [2, 8, 12], [0, 3, 8], [4, 10, 14], [0, 8, 10, 14]],
+      blurb: "Soft electric piano chords, a lazy swung beat and a little record crackle. Cosy rather than bouncy, like studying at a café.",
+      parts: [["Tune", "electric piano, sparse"], ["Chords", "electric piano sevenths"], ["Bass", "round and low"], ["Drums", "soft kick, brushed snare, swung hats, crackle"]],
+      bar(c, o, t, X) {
+        const { ch, tt, beat, mel, r, on } = X;
+        if (on.chords) {
+          ch.tones.forEach((m, i) => epiano(c, o, tt(0) + i * 0.012, mf(m), 0.014, 2.4, (i - 1.5) * 0.12));
+          if (r() < 0.5) ch.tones.forEach(m => epiano(c, o, tt(10), mf(m), 0.008, 1.4));
+        }
+        if (on.drums) {
+          kick(c, o, tt(0), 0.09); if (r() < 0.5) kick(c, o, tt(7), 0.05); kick(c, o, tt(10), 0.08);
+          brush(c, o, tt(4), 0.022); brush(c, o, tt(12), 0.022);
+          for (let p = 0; p < 16; p += 2) shaker(c, o, tt(p), 0.004);
+          const n = 5 + Math.floor(r() * 5);
+          for (let i = 0; i < n; i++) hit(c, o, t + r() * 4 * beat, 0.01 + r() * 0.02, "highpass", 3000, 0.7, 0.003, 0, r() - 0.5);
+        }
+        if (on.bass) { tone(c, o, tt(0), { f: mf(ch.root + 12), vol: 0.05, a: 0.008, d: 0.9 }); tone(c, o, tt(10), { f: mf(ch.root + 12), vol: 0.035, a: 0.008, d: 0.6 }); }
+        if (on.tune) mel.forEach(n => X.lead(c, o, tt(n.pos), mf(n.midi)));
+      } }
+  ];
+  const byId = {}; STYLES.forEach(s => byId[s.id] = s);
+
+  // ---------- your changes to each song ----------
+  const defaults = st => ({ bpm: st.bpm, swing: st.swing, prog: st.prog, lead: st.lead, oct: 0, notes: Math.round((1 - st.rest) * 100), room: st.room ?? 45, parts: { tune: true, chords: true, bass: true, drums: !st.noDrums } });
+  const CFG = {};
+  let savedCfg = {}; try { savedCfg = JSON.parse(localStorage.getItem("fp-music-cfg") || "{}"); } catch (e) {}
+  STYLES.forEach(st => { if (st.bpm) { const d = defaults(st), s = savedCfg[st.id] || {}; CFG[st.id] = { ...d, ...s, parts: { ...d.parts, ...(s.parts || {}) } }; if (!PROGS[CFG[st.id].prog] || !LEADS[CFG[st.id].lead]) CFG[st.id] = d; } });
+  const saveCfg = () => { try { localStorage.setItem("fp-music-cfg", JSON.stringify(CFG)); } catch (e) {} };
+  // The range the tune moves in, and how many of its possible notes it plays
+  const spec = (st, cfg) => ({ lo: PI(st.loM + 12 * cfg.oct), hi: PI(st.hiM + 12 * cfg.oct), rest: (100 - cfg.notes) / 100, rhythms: st.rhythms });
+
+  function scheduleBar(c, o, t, st, tune, k, cfg) {
+    const beat = 60 / cfg.bpm, s16 = beat / 4, names = cfg.prog.split(" "), ch = CH[names[k % names.length]];
+    const tt = p => t + p * s16 + (p % 4 === 2 ? cfg.swing * s16 : 0);
+    const lead = LEADS[cfg.lead][1];
+    st.bar(c, o, t, { ch, tt, beat, k, r: tune.r, on: cfg.parts, mel: tune.bar(k, ch), lead: (c2, o2, t2, f, s = 1) => lead(c2, o2, t2, f, 0.045 * s) });
+    return 4 * beat;
+  }
+
+  // ---------- even out: every style plays at the same loudness, a set amount under the merges ----------
+  const GAIN = {};
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  function gatedRms(d) {
+    let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+    const floor = peak * 0.05; let s = 0, n = 0; for (let i = 0; i < d.length; i++) if (Math.abs(d[i]) > floor) { s += d[i] * d[i]; n++; }
+    return n ? Math.sqrt(s / n) : 0.001;
+  }
+  // Measured with each style's original settings, so your changes (like switching parts off) change its loudness the way they would in the game
+  async function measure() {
+    if (!OAC) return;
+    let base = 0;
+    for (let k = 0; k < 4; k++) { const c = new OAC(1, 22050, 22050); kalimbaMerge(c, c.destination, 0.02, 32); base += gatedRms((await c.startRendering()).getChannelData(0)); }
+    base /= 4;
+    // At music level 50%, the music's average loudness is about 40% of a merge's
+    const target = base * 0.4;
+    for (const st of STYLES) {
+      if (!st.bpm) continue;
+      const cfg = defaults(st), beat = 60 / cfg.bpm, c = new OAC(1, Math.ceil(22050 * (16 * beat + 2)), 22050), tune = new Tune(spec(st, cfg), 7);
+      let t = 0.05; for (let k = 0; k < 4; k++) t += scheduleBar(c, c.destination, t, st, tune, k, cfg);
+      GAIN[st.id] = Math.min(4, target / gatedRms((await c.startRendering()).getChannelData(0)));
+    }
+  }
+
+  // ---------- live playback through the game's mix (compressor at -14, bus at 0.9) ----------
+  let ctx = null, bus = null, hp = null, lp = null, master = null, level = null, duck = null;
+  let phoneOn = false, duckOn = true;
+  function live() {
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+      master = ctx.createGain(); master.gain.value = +$("vol").value * 2.5;
+      hp = ctx.createBiquadFilter(); hp.type = "highpass"; lp = ctx.createBiquadFilter(); lp.type = "lowpass";
+      bus = ctx.createGain(); bus.gain.value = 0.9;
+      level = ctx.createGain(); level.gain.value = +$("lvl").value * 2; duck = ctx.createGain(); duck.gain.value = 1;
+      level.connect(duck); duck.connect(bus);
+      bus.connect(comp); comp.connect(master); master.connect(hp); hp.connect(lp); lp.connect(ctx.destination); speaker();
+    }
+    if (ctx.state !== "running") ctx.resume();
+    return ctx;
+  }
+  function speaker() { if (!hp) return; hp.frequency.value = phoneOn ? 420 : 20; lp.frequency.value = phoneOn ? 9000 : 20000; }
+  function dip(at) {
+    if (!duckOn) return;
+    duck.gain.cancelScheduledValues(at); duck.gain.setTargetAtTime(0.4, at, 0.02); duck.gain.setTargetAtTime(1, at + 0.5, 0.3);
+  }
+
+  // The pretend player: a swipe every second or so, a merge right after, and a new fruit every seventh move
+  const MERGES = [4, 8, 4, 16, 8, 32, 16, 4, 64, 32, 8, 128, 16, 256];
+  const FRESH = [16, 32, 64, 128, 256, 512, 1024, 2048];
+  let simTimer = null, simN = 0;
+  function light(v, fresh) {
+    const el = fruitsEl.querySelector(`[data-v="${v}"]`); if (!el) return;
+    const cls = fresh ? "fresh" : "hit"; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), fresh ? 700 : 260);
+  }
+  function move() {
+    const c = live(), t = c.currentTime + 0.03;
+    paperSwipe(c, bus, t, ["left", "up", "right", "down"][Math.floor(Math.random() * 4)]);
+    simN++;
+    if (simN % 7 === 0) { const v = FRESH[(simN / 7 - 1) % FRESH.length]; newFruit(c, bus, t + 0.12, v); dip(t + 0.12); setTimeout(() => light(v, true), 150); }
+    else { const v = MERGES[simN % MERGES.length]; kalimbaMerge(c, bus, t + 0.12, v); setTimeout(() => light(v), 150); }
+    simTimer = setTimeout(move, 600 + Math.random() * 800);
+  }
+  function setMoves(on) {
+    clearTimeout(simTimer);
+    if (!session) return;
+    session.moves = on; if (on) simTimer = setTimeout(move, 400);
+    const gb = session.card.querySelector('[data-act="game"]');
+    if (gb) { gb.textContent = on ? "Remove game sounds" : "Add game sounds"; gb.setAttribute("aria-pressed", String(on)); }
+  }
+
+  // One song plays at a time; bars are scheduled a little ahead, so your changes come in at the next bar
+  let session = null;
+  function play(id, withGame) {
+    stop();
+    const c = live(), st = byId[id], card = grid.querySelector(`[data-id="${id}"]`);
+    session = { id, card, k: 0, next: c.currentTime + 0.1 };
+    card.classList.add("playing"); card.querySelector(".demo").innerHTML = STOP_ICON + "Stop";
+    if (st.bpm) {
+      const g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(GAIN[id] ?? 1, c.currentTime + 0.3); g.connect(level);
+      verb(c, g); VG.get(g).gain.value = CFG[id].room / 100;
+      Object.assign(session, { g, tune: new Tune(spec(st, CFG[id]), seeds[id]) });
+      const tick = () => {
+        while (session && session.id === id && session.next < c.currentTime + 0.4) {
+          const k = session.k, at = session.next;
+          session.next += scheduleBar(c, session.g, at, st, session.tune, k, CFG[id]); session.k++;
+          const chips = card.querySelectorAll(".ch");
+          setTimeout(() => { if (session && session.id === id) chips.forEach((x, i) => x.classList.toggle("on", i === k % chips.length)); }, Math.max(0, (at - c.currentTime) * 1000));
+        }
+      };
+      tick(); session.timer = setInterval(tick, 60);
+    }
+    setMoves(withGame);
+  }
+  function stop() {
+    clearTimeout(simTimer);
+    if (!session) return;
+    const s = session; session = null;
+    clearInterval(s.timer);
+    if (s.g) { s.g.gain.cancelScheduledValues(ctx.currentTime); s.g.gain.setTargetAtTime(0, ctx.currentTime, 0.12); setTimeout(() => s.g.disconnect(), 1500); }
+    s.card.classList.remove("playing"); s.card.querySelector(".demo").innerHTML = PLAY_ICON + playLabel(s.id);
+    const gb = s.card.querySelector('[data-act="game"]'); if (gb) { gb.textContent = "Play with game sounds"; gb.setAttribute("aria-pressed", "false"); }
+    s.card.querySelectorAll(".ch").forEach(x => x.classList.remove("on"));
+  }
+
+  // ---------- page ----------
+  const PLAY_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5v14l12-7z"/></svg>';
+  const STOP_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  const playLabel = id => id === "none" ? "Play the game sounds" : "Play the song";
+  const seeds = {}; STYLES.forEach((s, i) => seeds[s.id] = 11 + i * 101);
+
+  const fruitsEl = $("fruits");
+  fruitsEl.innerHTML = ALL.map(([v, name, bg]) => `<div class="fruit" data-v="${v}" style="--tile:${bg}" role="img" aria-label="${name}"><img alt="" src="${svgURL(ART[v])}"></div>`).join("");
+
+  const sw = (id, get, set) => $(id).onclick = () => { set(!get()); $(id).setAttribute("aria-checked", String(get())); };
+  sw("phone", () => phoneOn, v => { phoneOn = v; live(); speaker(); });
+  sw("duck", () => duckOn, v => { duckOn = v; paintFav(); });
+  $("vol").addEventListener("input", e => { if (master) master.gain.value = +e.target.value * 2.5; });
+  $("lvl").addEventListener("input", e => { $("lvlOut").textContent = Math.round(e.target.value * 100) + "%"; if (level) level.gain.value = +e.target.value * 2; paintFav(); });
+
+  const OCT = [[-1, "Lower"], [0, "Normal"], [1, "Higher"]];
+  function tweakHTML(st) {
+    const id = st.id, ctl = (key, label, input, out = "") => `<div class="ctl"><label for="${id}-${key}">${label}</label>${input}<output id="${id}-${key}-out" for="${id}-${key}">${out}</output></div>`;
+    return `<details class="tweak"><summary>Change the song</summary><div class="tw">
+      ${ctl("bpm", "Tempo", `<input id="${id}-bpm" type="range" min="56" max="140" step="2">`)}
+      ${ctl("swing", "Swing", `<input id="${id}-swing" type="range" min="0" max="0.5" step="0.05">`)}
+      ${ctl("notes", "Tune notes", `<input id="${id}-notes" type="range" min="40" max="100" step="5">`)}
+      ${ctl("room", "Echo", `<input id="${id}-room" type="range" min="0" max="100" step="5">`)}
+      ${ctl("prog", "Chords", `<select id="${id}-prog">${Object.entries(PROGS).map(([k, d]) => `<option value="${k}">${k} · ${d}</option>`).join("")}</select>`)}
+      ${ctl("lead", "Tune sound", `<select id="${id}-lead">${Object.entries(LEADS).map(([k, [n]]) => `<option value="${k}">${n}</option>`).join("")}</select>`)}
+      <div class="ctl"><span class="clbl" id="${id}-oct-l">Tune pitch</span><div class="seg" role="group" aria-labelledby="${id}-oct-l">${OCT.map(([v, n]) => `<button type="button" data-oct="${v}">${n}</button>`).join("")}</div></div>
+      <div class="ctl"><span class="clbl" id="${id}-parts-l">Parts</span><div class="seg" role="group" aria-labelledby="${id}-parts-l">${PARTS.map(([k, n]) => `<button type="button" data-part="${k}"${k === "drums" && st.noDrums ? ' disabled title="This style has no drums"' : ""}>${n}</button>`).join("")}</div></div>
+      <button type="button" class="reset" data-act="reset">Back to the original</button>
+    </div></details>`;
+  }
+  function paintTweak(st) {
+    const id = st.id, cfg = CFG[id], card = grid.querySelector(`[data-id="${id}"]`), q = s => card.querySelector(s);
+    q(`#${id}-bpm`).value = cfg.bpm; q(`#${id}-bpm-out`).textContent = cfg.bpm + " BPM";
+    q(`#${id}-swing`).value = cfg.swing; q(`#${id}-swing-out`).textContent = Math.round(cfg.swing * 100) + "%";
+    q(`#${id}-notes`).value = cfg.notes; q(`#${id}-notes-out`).textContent = cfg.notes + "%";
+    q(`#${id}-room`).value = cfg.room; q(`#${id}-room-out`).textContent = cfg.room + "%";
+    q(`#${id}-prog`).value = cfg.prog; q(`#${id}-lead`).value = cfg.lead;
+    card.querySelectorAll("[data-oct]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.oct === cfg.oct)));
+    card.querySelectorAll("[data-part]").forEach(b => b.setAttribute("aria-pressed", String(!!cfg.parts[b.dataset.part])));
+    q(".chords").innerHTML = `<span class="lbl">Chords:</span>` + cfg.prog.split(" ").map(x => `<span class="ch">${x}</span>`).join("");
+    const changed = JSON.stringify(cfg) !== JSON.stringify(defaults(st));
+    q(".tweak summary").textContent = changed ? "Change the song (changed)" : "Change the song";
+  }
+  function wireTweak(st, card) {
+    const id = st.id, cfg = () => CFG[id], q = s => card.querySelector(s);
+    const after = (retune) => {
+      saveCfg(); paintTweak(st); paintFav();
+      if (session && session.id === id) {
+        if (retune) session.tune = new Tune(spec(st, cfg()), seeds[id]);
+        VG.get(session.g).gain.value = cfg().room / 100;
+      }
+    };
+    q(`#${id}-bpm`).addEventListener("input", e => { cfg().bpm = +e.target.value; after(); });
+    q(`#${id}-swing`).addEventListener("input", e => { cfg().swing = +e.target.value; after(); });
+    q(`#${id}-notes`).addEventListener("change", e => { cfg().notes = +e.target.value; after(true); });
+    q(`#${id}-notes`).addEventListener("input", e => { q(`#${id}-notes-out`).textContent = e.target.value + "%"; });
+    q(`#${id}-room`).addEventListener("input", e => { cfg().room = +e.target.value; after(); });
+    q(`#${id}-prog`).addEventListener("change", e => { cfg().prog = e.target.value; after(); });
+    q(`#${id}-lead`).addEventListener("change", e => { cfg().lead = e.target.value; after(); });
+    card.querySelectorAll("[data-oct]").forEach(b => b.onclick = () => { cfg().oct = +b.dataset.oct; after(true); });
+    card.querySelectorAll("[data-part]").forEach(b => b.onclick = () => { const p = cfg().parts; p[b.dataset.part] = !p[b.dataset.part]; after(); });
+    q('[data-act="reset"]').onclick = () => { CFG[id] = defaults(st); after(true); };
+  }
+
+  let fav = null;
+  try { fav = localStorage.getItem("fp-music-fav"); if (!byId[fav]) fav = null; } catch (e) {}
+  const grid = $("grid");
+  STYLES.forEach(s => {
+    const card = document.createElement("section");
+    card.className = "card"; card.style.setProperty("--c", s.color); card.dataset.id = s.id; card.setAttribute("aria-label", s.name);
+    const music = !!s.bpm;
+    card.innerHTML = `<div class="band"><span class="letter" aria-hidden="true">${s.letter}</span><div><h3>${s.name}</h3><div class="sub">${s.sub}</div></div></div>
+      <div class="body"><p>${s.blurb}</p>
+        <ul class="changes">${s.parts.map(([k, v]) => `<li><b>${k}</b><span>${v}</span></li>`).join("")}</ul>
+        ${music ? `<div class="chords"></div>` : ""}
+        <button class="demo" type="button" data-act="play">${PLAY_ICON}${playLabel(s.id)}</button>
+        ${music ? `<div class="row"><button type="button" data-act="game" aria-pressed="false">Play with game sounds</button><button type="button" data-act="tune">New tune</button></div>` + tweakHTML(s) : ""}
+        <button class="favbtn" type="button" data-act="fav" aria-pressed="false">This one</button></div>`;
+    grid.appendChild(card);
+    card.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => {
+      const act = b.dataset.act, mine = session && session.id === s.id;
+      if (act === "play") { mine ? stop() : play(s.id, !music); }
+      else if (act === "game") { mine ? setMoves(!session.moves) : play(s.id, true); }
+      else if (act === "tune") {
+        seeds[s.id] = Math.floor(Math.random() * 1e9);
+        if (mine) session.tune = new Tune(spec(s, CFG[s.id]), seeds[s.id]); else play(s.id, false);
+        b.textContent = "New tune ✓"; setTimeout(() => { b.textContent = "New tune"; }, 1200);
+      }
+      else if (act === "fav") { fav = fav === s.id ? null : s.id; paintFav(); }
+    }));
+    if (music) { wireTweak(s, card); paintTweak(s); }
+  });
+  function describe(st) {
+    const cfg = CFG[st.id], off = PARTS.filter(([k]) => !cfg.parts[k] && !(k === "drums" && st.noDrums)).map(([, n]) => "no " + n.toLowerCase());
+    const pitch = cfg.oct > 0 ? ", one octave up" : cfg.oct < 0 ? ", one octave down" : "";
+    return `${st.letter} ${st.name}: ${cfg.bpm} BPM, swing ${Math.round(cfg.swing * 100)}%, chords ${cfg.prog}, tune on ${LEADS[cfg.lead][0].toLowerCase()}${pitch}, tune notes ${cfg.notes}%, echo ${cfg.room}%${off.length ? ", " + off.join(", ") : ""}`;
+  }
+  function paintFav() {
+    grid.querySelectorAll(".card").forEach(c => { const on = c.dataset.id === fav; c.classList.toggle("fav", on); c.querySelector(".favbtn").setAttribute("aria-pressed", String(on)); c.querySelector(".favbtn").textContent = on ? "My favourite" : "This one"; });
+    const s = byId[fav], pct = Math.round($("lvl").value * 100);
+    $("readout").textContent = !s ? 'Nothing picked yet. Tap "This one" on a card.'
+      : s.bpm ? `Background music: ${describe(s)}. Music level ${pct}%, dip for new fruits ${duckOn ? "on" : "off"}.`
+      : "Background music: none, keep Fruit Picnic sound effects only";
+    try { fav ? localStorage.setItem("fp-music-fav", fav) : localStorage.removeItem("fp-music-fav"); } catch (e) {}
+  }
+  paintFav();
+  $("copy").onclick = () => {
+    const txt = $("readout").textContent, btn = $("copy");
+    const done = ok => { btn.textContent = ok ? "Copied" : "Select and copy"; setTimeout(() => { btn.textContent = "Copy"; }, 1600); };
+    const select = () => { const r = document.createRange(); r.selectNodeContents($("readout")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    try { navigator.clipboard.writeText(txt).then(() => done(true), () => { select(); done(false); }); } catch (e) { select(); done(false); }
+  };
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
+
+  measure().then(() => { $("status").textContent = "Volumes evened out. Press play on any song; only one plays at a time."; })
+           .catch(() => { $("status").textContent = "Couldn't measure volumes in this browser, so some styles may be a little louder."; });
+})();
+</script>
