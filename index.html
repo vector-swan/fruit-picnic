@@ -135,25 +135,13 @@
 
   <!-- Friends leaderboard -->
   <div class="leaderboard" id="leaderboard">
-    <div class="leaderboard-content">
-      <h2>🏆 Leaderboard</h2>
-      <div class="lb-tabs" id="lbTabs" role="tablist" aria-label="Which leaderboard"></div>
-      <div class="lb-board" id="lbBoard">
-        <ol class="lb-list" id="lbList"></ol>
-        <p class="lb-note" id="lbStatus" role="status"></p>
-        <p class="lb-note" id="lbShowHidden" hidden><button class="lb-link" id="lbShowHiddenBtn" type="button"></button></p>
-        <p class="lb-note lb-group-bar" id="lbGroupBar" hidden>Code <b id="lbGroupCode"></b> · <button class="lb-link" id="lbInvite" type="button">invite friends</button> · <button class="lb-link" id="lbLeave" type="button">leave</button></p>
-      </div>
-      <div class="lb-groups" id="lbGroupsView" hidden>
-        <p class="lb-note">Groups show just your friends’ scores. Anyone with the code can join.</p>
-        <form class="lb-form" id="lbCreateForm"><input class="lb-input" id="lbNewGroup" maxlength="24" placeholder="Group name" aria-label="Name for a new group" enterkeyhint="done"><button class="btn lb-save" type="submit">Start</button></form>
-        <form class="lb-form" id="lbJoinForm"><input class="lb-input" id="lbJoinCode" maxlength="16" placeholder="Code, like PLUM-4827" aria-label="Group code" autocapitalize="characters" autocomplete="off" enterkeyhint="go"><button class="btn lb-save" type="submit">Join</button></form>
-        <p class="lb-note lb-problem" id="lbGroupsMsg" role="alert" hidden></p>
-      </div>
-      <p class="lb-note" id="lbMe" hidden>Playing as <b id="lbMeName"></b> · <button class="lb-link" id="lbRename" type="button">change name</button></p>
-      <p class="lb-note" id="lbHeld" hidden>Your name was reported, so others see “Picnic Player” until it’s reviewed.</p>
-      <p class="lb-note" id="lbForget" hidden><button class="lb-link" id="lbRemove" type="button">Remove me from the leaderboard</button></p>
-      <p class="lb-note">Names and scores are visible to everyone. <a class="lb-link privacy-link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
+    <div class="leaderboard-content" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+      <h2 id="lbTitle">🏆 Leaderboard</h2>
+      <!-- filled in by leaderboard.js: the boards, your groups, and the steps for starting or joining one -->
+      <div class="lb-view" id="lbView"></div>
+      <p class="lb-note lb-flash" id="lbFlash" role="status" hidden></p>
+      <p class="lb-note" id="lbFoot" hidden>Playing as <b id="lbMeName"></b> · <span id="lbMeVis"></span> · <button class="lb-link" id="lbMeBtn" type="button">change</button></p>
+      <p class="lb-note">Names and scores are visible to other players. <a class="lb-link privacy-link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
       <button class="btn btn-big" id="lbClose" type="button">Back to the game</button>
     </div>
   </div>

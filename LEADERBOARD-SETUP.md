@@ -36,8 +36,9 @@ stay private.
 
 ## How it works
 
-- After a game ends, players type a name once and tap **Post**. After that,
-  every finished game is posted automatically.
+- After a game ends, players type a name once, choose where their scores show,
+  and tap **Post score**. After that, every finished game is posted
+  automatically, and the card shows their place on each board.
 - Each phone appears once on the board, with its best score.
 - The 🏆 button shows the top 15, for **Everyone** or for a friend group.
 - Scores made offline are posted the next time the game is online.
@@ -55,12 +56,23 @@ new version of the game, because the new game uses the new functions.
 
 ## Friend groups
 
-- **＋ Groups** on the leaderboard lets players start a group (they get a code
-  like `PLUM-4827` to share) or join one by typing a code.
+- The 🏆 button has two parts: **Everyone** and **My groups**. My groups lists
+  each group with its number of players and your place in it.
+- **＋ New group**: type a name and tap **Create group**. The next screen shows
+  the invite link with **Copy link** and **Share**.
 - Invite links look like `https://fruitpicnic.io/?join=PLUM-4827`. They open the
-  website and offer to join. In the iPhone app players type the code instead.
-- Each group shows only its members' best scores. A group with no members left
-  is deleted. Groups are in **Table Editor → groups** and **group_members**.
+  website and show a **Join** card. Players can also type the code under
+  **Have a code?**.
+- **A fresh start in each group:** a group only counts games played after you
+  joined it. Your best on Everyone stays your all-time best. Leaving and joining
+  again starts fresh too. (People who were already in groups when this was
+  added kept their best at the time.)
+- **Where your scores show:** the first time players post, join or start a
+  group, they choose **Everyone and my groups** or **Only my groups**. "Only my
+  groups" keeps them off the Everyone board. They can change it under
+  **change** at the bottom of the leaderboard.
+- Each group's bests are in **Table Editor → group_members** (`best`). A group
+  with no members left is deleted.
 
 ## Keeping names friendly
 

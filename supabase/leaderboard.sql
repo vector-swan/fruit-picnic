@@ -58,6 +58,25 @@ create table if not exists public.group_members (
 );
 create index if not exists group_members_player on public.group_members (player_id);
 
+-- "Only my groups": the player is left off the Everyone board but still shows
+-- in their groups. Players choose this the first time they post or join.
+alter table public.scores add column if not exists groups_only boolean not null default false;
+
+-- Each group keeps its own best for each member, counting only games played
+-- after they joined, so joining a group is a fresh start. The first time this
+-- runs, people already in groups keep their current best there.
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'group_members' and column_name = 'best') then
+    alter table public.group_members add column best integer not null default 0;
+    alter table public.group_members add column best_at timestamptz;
+    update public.group_members m set best = s.score, best_at = s.updated_at
+      from public.scores s where s.player_id = m.player_id;
+  end if;
+end;
+$$;
+
 -- Lock the tables: the game only gets in through the functions below.
 -- (You can still see and edit everything in Supabase's Table Editor.)
 alter table public.scores        enable row level security;
@@ -169,33 +188,158 @@ begin
     top_tile   = greatest(scores.top_tile, excluded.top_tile),
     updated_at = case when excluded.score > scores.score then now() else scores.updated_at end;
 
+  -- and in every group the player is in, counting from when they joined
+  update group_members set best = p_score, best_at = now()
+  where player_id = p_player and best < p_score;
+
   select score into v_best from scores where player_id = p_player;
-  return (select count(*) + 1 from scores where score > v_best);
+  return (select count(*) + 1 from scores where score > v_best and not groups_only);
 end;
 $$;
 
--- The top scores, for everyone (p_code null) or for one group the player is in.
--- Reported names show as "Picnic Player". "held" tells a player that their own
--- name is waiting for review.
-drop function if exists public.leaderboard(uuid, text, integer);
-create or replace function public.leaderboard(p_player uuid, p_code text default null, p_limit integer default 15)
-returns table (id uuid, name text, score integer, me boolean, held boolean)
+-- Saves a player's name and where their scores show, before or between games
+-- (when they first join or start a group, or change it on the leaderboard).
+-- A player with no games yet is kept with a score of 0, which no board shows,
+-- so their name can appear in a group as "no score yet".
+create or replace function public.save_player(p_player uuid, p_name text, p_groups_only boolean)
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_name text := tidy_name(p_name);
+begin
+  if p_player is null then raise exception 'That doesn''t look right'; end if;
+  if not name_allowed(v_name, 20) then raise exception 'name_not_allowed'; end if;
+  delete from reports where target = (select public_id from scores where player_id = p_player and name <> v_name);
+  insert into scores (player_id, name, score, top_tile, groups_only)
+  values (p_player, v_name, 0, 2, coalesce(p_groups_only, false))
+  on conflict (player_id) do update set
+    hidden      = scores.hidden and scores.name = excluded.name,
+    name        = excluded.name,
+    groups_only = excluded.groups_only;
+end;
+$$;
+
+-- Where a player is on one group's board (1 = top), or null with no score there yet
+create or replace function public.group_place(p_group uuid, p_player uuid)
+returns integer
+language sql stable
+set search_path = public
+as $$
+  select case when me.best > 0 then (
+    select count(*)::int + 1 from group_members o
+    where o.group_id = p_group and (o.best > me.best or (o.best = me.best and o.best_at < me.best_at))
+  ) end
+  from group_members me where me.group_id = p_group and me.player_id = p_player;
+$$;
+
+-- The groups a player is in, for the "My groups" list
+create or replace function public.group_list(p_player uuid)
+returns table (code text, name text, players integer, place integer, best integer, started_by text)
+language sql stable security definer
+set search_path = public
+as $$
+  select g.code, g.name,
+         (select count(*)::int from group_members o where o.group_id = g.id),
+         group_place(g.id, p_player),
+         m.best,
+         (select case when s.hidden then 'Picnic Player' else s.name end from scores s where s.player_id = g.created_by)
+  from groups g join group_members m on m.group_id = g.id
+  where m.player_id = p_player
+  order by m.joined_at;
+$$;
+
+-- One group's board, for members only: everyone in it with a name, best first.
+-- A score of 0 means no game yet since joining.
+create or replace function public.group_board(p_player uuid, p_code text)
+returns table (id uuid, name text, score integer, me boolean, held boolean, place integer)
 language sql stable security definer
 set search_path = public
 as $$
   select s.public_id,
          case when s.hidden then 'Picnic Player' else s.name end,
-         s.score,
+         m.best,
          s.player_id = p_player,
-         s.hidden and s.player_id = p_player
-  from scores s
-  where p_code is null
-     or s.player_id in (
-       select m.player_id from group_members m join groups g on g.id = m.group_id
-       where g.code = upper(p_code)
-         and exists (select 1 from group_members me where me.group_id = g.id and me.player_id = p_player))
-  order by s.score desc, s.updated_at asc
-  limit least(greatest(coalesce(p_limit, 15), 1), 50);
+         s.hidden and s.player_id = p_player,
+         group_place(g.id, m.player_id)
+  from groups g
+  join group_members m on m.group_id = g.id
+  join scores s on s.player_id = m.player_id
+  where g.code = upper(p_code)
+    and exists (select 1 from group_members me where me.group_id = g.id and me.player_id = p_player)
+  order by m.best desc, m.best_at asc nulls last, m.joined_at
+  limit 50;
+$$;
+
+-- Save a finished game and say where it landed: the place on Everyone (null
+-- for "only my groups") and on each group, with whether it was a new best there.
+create or replace function public.post_score(p_player uuid, p_name text, p_score integer, p_tile integer, p_groups_only boolean)
+returns json
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_was     integer;
+  v_better  uuid[];
+  v_me      scores;
+begin
+  select score into v_was from scores where player_id = p_player;
+  select coalesce(array_agg(group_id), '{}') into v_better
+    from group_members where player_id = p_player and best < p_score;
+  perform submit_score(p_player, p_name, p_score, p_tile);
+  update scores set groups_only = coalesce(p_groups_only, false) where player_id = p_player
+    returning * into v_me;
+  return json_build_object(
+    'everyone', case when v_me.groups_only then null else (
+      select count(*) + 1 from scores o
+      where not o.groups_only and (o.score > v_me.score or (o.score = v_me.score and o.updated_at < v_me.updated_at))) end,
+    'everyone_best', coalesce(v_was, 0) < p_score,
+    'groups', coalesce((
+      select json_agg(json_build_object(
+               'code', g.code, 'name', g.name, 'place', group_place(g.id, p_player),
+               'players', (select count(*) from group_members o where o.group_id = g.id),
+               'best', g.id = any(v_better)) order by m.joined_at)
+      from group_members m join groups g on g.id = m.group_id
+      where m.player_id = p_player), '[]'::json));
+end;
+$$;
+
+-- The top scores, for everyone (p_code null) or for one group the player is in.
+-- Everyone leaves out players who chose "only my groups"; a group counts only
+-- games since each member joined. Reported names show as "Picnic Player".
+-- "held" tells a player that their own name is waiting for review. With
+-- p_with_me, the player's own row is added at the end when they're further down.
+drop function if exists public.leaderboard(uuid, text, integer);
+create or replace function public.leaderboard(p_player uuid, p_code text default null, p_limit integer default 15, p_with_me boolean default false)
+returns table (id uuid, name text, score integer, me boolean, held boolean, place integer)
+language sql stable security definer
+set search_path = public
+as $$
+  with board as (
+    select s.public_id, s.name, s.hidden, s.player_id, s.score, s.updated_at as at
+    from scores s
+    where p_code is null and not s.groups_only and s.score > 0
+    union all
+    select s.public_id, s.name, s.hidden, s.player_id, m.best, m.best_at
+    from group_members m
+    join groups g on g.id = m.group_id
+    join scores s on s.player_id = m.player_id
+    where p_code is not null and g.code = upper(p_code) and m.best > 0
+      and exists (select 1 from group_members me where me.group_id = g.id and me.player_id = p_player)
+  ), ranked as (
+    select b.*, (row_number() over (order by b.score desc, b.at asc))::int as place from board b
+  )
+  select r.public_id,
+         case when r.hidden then 'Picnic Player' else r.name end,
+         r.score,
+         r.player_id = p_player,
+         r.hidden and r.player_id = p_player,
+         r.place
+  from ranked r
+  where r.place <= least(greatest(coalesce(p_limit, 15), 1), 50)
+     or (p_with_me and r.player_id = p_player)
+  order by r.place;
 $$;
 
 -- "Report name". Two different players reporting the same name hides it.
@@ -327,17 +471,21 @@ do $$
 declare f text;
 begin
   foreach f in array array[
-    'tidy_name(text)', 'name_allowed(text, integer)',
-    'check_name(text)', 'submit_score(uuid, text, integer, integer)', 'leaderboard(uuid, text, integer)',
+    'tidy_name(text)', 'name_allowed(text, integer)', 'group_place(uuid, uuid)',
+    'check_name(text)', 'submit_score(uuid, text, integer, integer)', 'leaderboard(uuid, text, integer, boolean)',
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
-    'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)']
+    'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
+    'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean)',
+    'group_list(uuid)', 'group_board(uuid, text)']
   loop
     execute format('revoke all on function public.%s from public', f);
   end loop;
   foreach f in array array[
-    'check_name(text)', 'submit_score(uuid, text, integer, integer)', 'leaderboard(uuid, text, integer)',
+    'check_name(text)', 'submit_score(uuid, text, integer, integer)', 'leaderboard(uuid, text, integer, boolean)',
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
-    'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)']
+    'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
+    'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean)',
+    'group_list(uuid)', 'group_board(uuid, text)']
   loop
     execute format('grant execute on function public.%s to anon, authenticated', f);
   end loop;

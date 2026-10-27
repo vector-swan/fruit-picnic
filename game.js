@@ -888,7 +888,7 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 // double-tap. Telling the browser to ignore the touch itself stops that; swipes
 // are still read from touchmove, and buttons are left alone so taps work.
 document.addEventListener('touchstart', e => {
-  if (!e.target.closest('button, a, input, .lb-list, .steps')) e.preventDefault();
+  if (!e.target.closest('button, a, input, label, .leaderboard-content, .gameover-content, .celebration-content, .steps')) e.preventDefault();
 }, { passive: false });
 
 // ── Themes ────────────────────────────────────────────────────────────────────
