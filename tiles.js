@@ -49,7 +49,7 @@ const heart = (x, y, s, color = '#FF6FA5') =>
 
 function backdrop(c, v, o = {}) {
   const dark = !!c.dark;   // night tiles: a faint warm glow and golden sparkles
-  const { hx = 50, hy = 52, hr = 44, color = dark ? '#FFE9A8' : '#FFFFFF', op = dark ? 0.35 : 0.75 } = o;
+  const { hx = 50, hy = 52, hr = 44, color = dark ? '#FFE9A8' : '#FFFFFF', op = dark ? 0.6 : 0.75 } = o;
   c.defs += `<radialGradient id="${c.p}bg" cx="50%" cy="45%" r="70%"><stop offset="0" stop-color="#FFFFFF" stop-opacity="${dark ? 0.1 : 0.55}"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
 <radialGradient id="${c.p}halo"><stop offset="0" stop-color="${color}" stop-opacity="${op}"/><stop offset="0.6" stop-color="${color}" stop-opacity="${op * 0.45}"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient>`;
   const sc = dark ? '#FFF6C4' : '#FFFFFF';
@@ -1045,12 +1045,13 @@ function candyBucketSVG(opts = {}) {
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 // ── Cocoa Night ───────────────────────────────────────────────────────────────
-// The same fruit after dark: each background is a deeper version of its pastel,
-// with a faint warm glow so the tiles don't glare on the dark screen.
+// The same fruit after dark: each background is a deeper version of its pastel
+// (lifted a third of the way back so the fruit still reads), with a warm pool
+// of light behind the fruit instead of the daytime white halo.
 const NIGHT_BG = {
-  2: '#4B3A78', 4: '#3E4680', 8: '#33507A', 16: '#2C5E66', 32: '#2F6045',
-  64: '#4D5E2E', 128: '#6B5A24', 256: '#6E4626', 512: '#6E3A2C',
-  1024: '#6E3238', 2048: '#6E2D52', 4096: '#6E2A55', 8192: '#702650', 16384: '#72234C',
+  2: '#7F6EA4', 4: '#7279AA', 8: '#6882A6', 16: '#638F96', 32: '#679276',
+  64: '#819162', 128: '#9D8E58', 256: '#9F7B58', 512: '#9F6E5A',
+  1024: '#9F676A', 2048: '#9F6082', 4096: '#9F5981', 8192: '#A1527A', 16384: '#A24B75',
 };
 const NIGHT_ART = Object.fromEntries(Object.entries(FRUIT_BUILD).map(([v, build]) => [v, tile(v, build, NIGHT_BG, 'nf', true)]));
 
