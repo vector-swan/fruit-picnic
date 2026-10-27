@@ -1,10 +1,10 @@
 'use strict';
 // ── Friends leaderboard (Supabase) ────────────────────────────────────────────
-// Each phone gets a private random id and a name the player picks once, along
-// with where their scores show: everyone and their groups, or only their
-// groups. When a game ends, the score is sent to Supabase, which keeps each
-// player's best on the Everyone board and, separately, in each group (counting
-// only games since they joined it). The trophy button shows the boards and the
+// Each phone gets a private random id and a name the player picks once. When a
+// game ends, the player ticks which boards to post to (Everyone and/or their
+// groups, remembered from last time) and the score is sent to Supabase, which
+// keeps each player's best on the Everyone board and, separately, in each group
+// (counting only games since they joined it). The trophy button shows the boards and the
 // player's groups. Players can hide or report other players' names. If the
 // settings below are empty, the whole feature stays hidden. The key here is
 // Supabase's public "anon" / "publishable" key, which is safe to put in the
@@ -42,10 +42,6 @@ function lbPlayerId() {
   return id;
 }
 const lbName = () => lbStore.get('fruitpicnic.lbName') || '';
-// "Only my groups" keeps the player off the Everyone board. Chosen once, with
-// the name; players from before this was asked count as "everyone".
-const lbGroupsOnly = () => lbStore.get('fruitpicnic.lbVis') === 'groups';
-const lbSetGroupsOnly = on => lbStore.set('fruitpicnic.lbVis', on ? 'groups' : 'everyone');
 // Groups this phone is in ({ code, name, players, place, started_by }), kept
 // here so the list shows up straight away
 const lbGroups = () => lbStore.json('fruitpicnic.lbGroups', []);
@@ -75,8 +71,11 @@ async function lbRpc(fn, args) {
 }
 const lbFetchTop = () => lbRpc('leaderboard', { p_player: lbPlayerId(), p_code: null, p_limit: LB_SIZE, p_with_me: true });
 const lbFetchGroup = code => lbRpc('group_board', { p_player: lbPlayerId(), p_code: code });
-const lbPostScore = entry => lbRpc('post_score', { p_player: lbPlayerId(), p_name: entry.name, p_score: entry.score, p_tile: entry.tile, p_groups_only: lbGroupsOnly() });
-const lbSavePlayer = () => lbRpc('save_player', { p_player: lbPlayerId(), p_name: lbName(), p_groups_only: lbGroupsOnly() });
+const lbPostScore = entry => lbRpc('post_score', {
+  p_player: lbPlayerId(), p_name: entry.name, p_score: entry.score, p_tile: entry.tile,
+  p_everyone: entry.everyone !== false, p_groups: entry.groups || [],
+});
+const lbSavePlayer = () => lbRpc('save_player', { p_player: lbPlayerId(), p_name: lbName(), p_groups_only: null });
 const lbRemove = () => lbRpc('remove_score', { p_player: lbPlayerId() });
 
 // ── Names ──
@@ -99,37 +98,19 @@ const lbEsc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 const lbNum = n => Number(n).toLocaleString();
 const lbPlayers = n => n === 1 ? '1 player' : `${n} players`;
 
-// The "where should your scores show?" choice. `compact` is the short version
-// for the game-over card.
-function lbVisPicker(name, compact) {
-  const g = lbGroupsOnly();
-  const opt = (value, title, detail, on) => `<label class="lb-opt"><input type="radio" name="${name}" value="${value}"${on ? ' checked' : ''}>`
-    + `<span><b>${title}</b>${compact ? '' : `<small>${detail}</small>`}</span></label>`;
-  return `<div class="lb-vis" role="radiogroup" aria-label="Where your scores show">`
-    + opt('everyone', 'Everyone and my groups', 'Your name and best score show on the Everyone board and in your groups.', !g)
-    + opt('groups', 'Only my groups', 'Only friends in your groups see you. Good for kids and family play.', g)
-    + `</div>`;
-}
-const lbPickedVis = (root, name) => {
-  const el = root.querySelector(`input[name="${name}"]:checked`);
-  return el ? el.value === 'groups' : lbGroupsOnly();
-};
-// Name and visibility boxes for players who haven't picked a name yet. They sit
-// in their own "About you" box so they don't read as more boxes about the group.
+// The name box for players who haven't picked a name yet. It sits in its own
+// "About you" box so it doesn't read as another question about the group.
 const lbFirstTimeFields = id => lbName() ? '' : `<div class="lb-you"><span class="lb-you-h">About you</span>`
-  + `<span class="lb-note">You only fill this in once.</span>`
   + `<label class="lb-label" for="${id}Name">Your name</label>`
   + `<input class="lb-input" id="${id}Name" maxlength="20" placeholder="What friends call you" autocomplete="nickname" enterkeyhint="done">`
-  + `<span class="lb-label">Where your scores show</span>${lbVisPicker(id + 'Vis')}</div>`;
-// Checks and saves those boxes. Returns '' when done, otherwise the problem.
+  + `<span class="lb-note">Shown next to your scores. You only enter this once.</span></div>`;
+// Checks and saves that box. Returns '' when done, otherwise the problem.
 async function lbSaveFirstTime(root, id) {
   if (lbName()) return '';
   const name = tidyName(root.querySelector(`#${id}Name`).value);
   const why = await lbNameProblem(name);
   if (why) return why;
-  const groupsOnly = lbPickedVis(root, id + 'Vis');
   lbStore.set('fruitpicnic.lbName', name);
-  lbSetGroupsOnly(groupsOnly);
   try { await lbSavePlayer(); }
   catch (e) {
     lbStore.set('fruitpicnic.lbName', null);
@@ -139,97 +120,123 @@ async function lbSaveFirstTime(root, id) {
 }
 const LB_OFFLINE = 'Couldn’t reach the leaderboard. Check your connection and try again.';
 
-// A finished game waits here until it's sent, so scores made offline aren't lost
-async function lbFlush() {
-  const raw = lbStore.get('fruitpicnic.lbPending');
-  if (!raw) return null;
-  const entry = JSON.parse(raw);
-  let result;
-  try {
-    result = await lbPostScore(entry);
-  } catch (e) {
-    // The database turned the name down: forget it so the player picks a new
-    // one next time, instead of failing over and over
-    if (e.message === 'name_not_allowed') {
-      lbStore.set('fruitpicnic.lbPending', null);
-      if (lbName() === entry.name) lbStore.set('fruitpicnic.lbName', null);
-    }
-    throw e;
-  }
-  // only clear it if nothing newer was queued meanwhile
-  if (lbStore.get('fruitpicnic.lbPending') === raw) lbStore.set('fruitpicnic.lbPending', null);
-  lbRefreshGroups();
-  return result;
+// Where finished games get posted: the boards ticked last time. Kept as what was
+// left unticked, so a group joined later starts out ticked.
+const lbPostTo = () => lbStore.json('fruitpicnic.lbPostTo', { everyone: true, skip: [] });
+const lbSetPostTo = to => lbStore.set('fruitpicnic.lbPostTo', JSON.stringify(to));
+
+// Finished games wait here until they're sent, so scores made offline aren't
+// lost. Each one remembers which boards it was posted to.
+function lbPending() {
+  const p = lbStore.json('fruitpicnic.lbPending', []);
+  return Array.isArray(p) ? p : [p];   // older versions kept a single game
 }
-function lbQueue(score, tile) {
-  const prev = lbStore.json('fruitpicnic.lbPending', null);
-  if (prev && prev.score >= score && prev.name === lbName()) return;
-  lbStore.set('fruitpicnic.lbPending', JSON.stringify({ name: lbName(), score: Math.max(score, prev ? prev.score : 0), tile }));
+const lbSetPending = queue => lbStore.set('fruitpicnic.lbPending', queue.length ? JSON.stringify(queue) : null);
+function lbQueue(entry) { lbSetPending([...lbPending(), entry].slice(-20)); }
+// Sends the waiting games, oldest first, and returns where the last one landed
+async function lbFlush() {
+  let result = null;
+  for (let tries = 0; tries < 20; tries++) {
+    const entry = lbPending()[0];
+    if (!entry) break;
+    try {
+      result = await lbPostScore(entry);
+    } catch (e) {
+      // The database turned the name down: forget it so the player picks a new
+      // one next time, instead of failing over and over
+      if (e.message === 'name_not_allowed') {
+        lbSetPending(lbPending().filter(x => x.name !== entry.name));
+        if (lbName() === entry.name) lbStore.set('fruitpicnic.lbName', null);
+      }
+      throw e;
+    }
+    // take it off the front, unless another send already did
+    const queue = lbPending();
+    if (queue.length && JSON.stringify(queue[0]) === JSON.stringify(entry)) queue.shift();
+    lbSetPending(queue);
+  }
+  if (result) lbRefreshGroups();
+  return result;
 }
 
 // ── The "post" row on the win / game-over cards ──
-// The first time, the player picks a name and where their scores show. After
-// that every finished game posts by itself, and the card shows where it landed.
+// Everyone and each of the player's groups with a tick box (remembered from last
+// time) and a Post score button, plus a name box the first time. After posting,
+// the card shows where the score landed on each board.
 function lbCardRow(card) { return card.querySelector('.lb-post'); }
+// While Post score is showing it's the card's main button, so the card's own
+// buttons step back
+const lbDemote = (row, on) => row.closest('.celebration, .gameover')
+  .querySelectorAll('.btn-big').forEach(b => b.classList.toggle('btn-quiet', on));
 function lbShowPost(card) {
   const row = lbCardRow(card);
-  if (!lbOn || !row || score <= 0) { if (row) row.hidden = true; return; }
+  if (!lbOn || !row || score <= 0) { if (row) { row.hidden = true; lbDemote(row, false); } return; }
   row.hidden = false;
-  const top = Math.max(...liveTiles.map(t => t.value));
-  row.dataset.score = score; row.dataset.tile = top;
-  if (lbName()) lbPost(row);
-  else lbAsk(row);
+  row.dataset.score = score;
+  row.dataset.tile = Math.max(...liveTiles.map(t => t.value));
+  lbAsk(row);
 }
 function lbAsk(row, problem = '') {
-  row.innerHTML = `<form class="lb-post-form"><input class="lb-input" maxlength="20" placeholder="Your name" aria-label="Your name for the leaderboard" autocomplete="nickname" enterkeyhint="done">`
-    + `<span class="lb-label">Show my scores to</span>${lbVisPicker('lbCardVis', true)}`
-    + `<button class="btn lb-save" type="submit">🏆 Post score</button></form><p class="lb-note lb-problem" role="alert"></p>`
-    + `<p class="lb-note">You only choose this once. <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`;
-  const form = row.querySelector('form'), input = row.querySelector('input'), note = row.querySelector('.lb-problem');
-  note.textContent = problem;
-  note.hidden = !problem;
-  input.value = lbName();
+  const to = lbPostTo();
+  const box = (value, label, on) => `<label class="lb-check"><input type="checkbox" value="${lbEsc(value)}"${on ? ' checked' : ''}><span>${lbEsc(label)}</span></label>`;
+  row.innerHTML = '<form class="lb-post-form">'
+    + (lbName() ? '' : '<input class="lb-input" maxlength="20" placeholder="Your name" aria-label="Your name for the leaderboard" autocomplete="nickname" enterkeyhint="done">')
+    + '<span class="lb-label" id="lbPostToLabel">Post to</span><div class="lb-checks" role="group" aria-labelledby="lbPostToLabel">'
+    + box('everyone', 'Everyone', to.everyone !== false)
+    + lbGroups().map(g => box(g.code, g.name, !(to.skip || []).includes(g.code))).join('')
+    + '</div><p class="lb-note lb-problem" role="alert" hidden></p>'
+    + '<button class="btn lb-wide" type="submit">🏆 Post score</button></form>'
+    + (lbName() ? '' : `<p class="lb-note">Your name shows next to your scores. <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`);
+  lbDemote(row, true);
+  const form = row.querySelector('form'), note = row.querySelector('.lb-problem');
+  const say = text => { note.textContent = text; note.hidden = !text; };
+  say(problem);
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    const name = tidyName(input.value);
-    if (!name) { input.focus(); return; }
-    const save = form.querySelector('button');
-    save.disabled = true;
-    const why = await lbNameProblem(name);
-    save.disabled = false;
-    if (why) { note.textContent = why; note.hidden = false; input.focus(); return; }
-    lbStore.set('fruitpicnic.lbName', name);
-    lbSetGroupsOnly(lbPickedVis(row, 'lbCardVis'));
-    input.blur();
+    const ticks = [...form.querySelectorAll('.lb-check input')];
+    const everyone = ticks[0].checked, groups = ticks.slice(1).filter(t => t.checked).map(t => t.value);
+    if (!everyone && !groups.length) { say('Tick at least one board to post to.'); return; }
+    const input = form.querySelector('.lb-input');
+    if (input) {
+      const name = tidyName(input.value);
+      if (!name) { input.focus(); return; }
+      const save = form.querySelector('button');
+      save.disabled = true;
+      const why = await lbNameProblem(name);
+      save.disabled = false;
+      if (why) { say(why); input.focus(); return; }
+      lbStore.set('fruitpicnic.lbName', name);
+      input.blur();
+    }
+    lbSetPostTo({ everyone, skip: ticks.slice(1).filter(t => !t.checked).map(t => t.value) });
+    lbQueue({ name: lbName(), score: +row.dataset.score, tile: +row.dataset.tile, everyone, groups });
     lbPost(row);
   });
 }
 async function lbPost(row) {
-  lbQueue(+row.dataset.score, +row.dataset.tile);
-  row.innerHTML = '<p class="lb-note">Posting to the leaderboard…</p>';
+  row.innerHTML = '<p class="lb-note">Posting…</p>';
   let result;
   try {
     result = await lbFlush();
   } catch (e) {
     if (e.message === 'name_not_allowed') { lbAsk(row, 'Let’s pick a different name 🍓'); return; }
     row.innerHTML = '<p class="lb-note">Couldn’t reach the leaderboard. Your score will be posted next time you’re online.</p>';
+    lbDemote(row, false);
     return;
   }
-  // Each board this score is on: Everyone (unless "only my groups") and each group
+  // Each board this score went to, with its place there
   const places = [];
-  if (result && result.everyone) places.push({ label: 'Everyone', place: `#${lbNum(result.everyone)}`, best: result.everyone_best, open: 'everyone' });
+  if (result && result.everyone) places.push({ label: 'Everyone', place: `#${lbNum(result.everyone)}`, best: result.everyone_best });
   ((result && result.groups) || []).forEach(g => places.push({
     label: g.name, place: g.place ? `#${g.place} of ${g.players}` : '–', best: g.best, group: g.code,
   }));
   const shown = places.slice(0, 4);
-  row.innerHTML = `<p class="lb-note">🏆 Posted as <b></b></p>`
+  row.innerHTML = '<p class="lb-note">🏆 Posted as <b></b></p>'
     + (shown.length ? `<ul class="lb-places">${shown.map((p, i) => `<li><button class="lb-place" type="button" data-i="${i}">`
       + `<span class="lb-place-name">${lbEsc(p.label)}${p.best ? '<span class="lb-tag">New best</span>' : ''}</span><b>${p.place} ›</b></button></li>`).join('')}</ul>`
-      : '')
+      : '<button class="lb-link" type="button" data-see>See leaderboard</button>')
     + (places.length > shown.length ? `<p class="lb-note">and ${places.length - shown.length} more</p>` : '')
-    + (!result ? '<button class="lb-link" type="button" data-see>See leaderboard</button>'
-      : !places.length ? '<p class="lb-note">Only your groups see your scores, and you’re not in one yet. <button class="lb-link" type="button" data-start>Start a group</button></p>'
-      : '');
+    + (lbGroups().length ? '' : '<button class="lb-link" type="button" data-start>Start a group with friends</button>');
   row.querySelector('b').textContent = lbName();
   row.querySelectorAll('.lb-place').forEach(b => b.addEventListener('click', () => {
     const p = shown[+b.dataset.i];
@@ -237,6 +244,7 @@ async function lbPost(row) {
   }));
   row.querySelector('[data-see]')?.addEventListener('click', () => lbOpen());
   row.querySelector('[data-start]')?.addEventListener('click', () => lbOpen('new'));
+  lbDemote(row, false);
 }
 
 // ── The leaderboard panel ──
@@ -263,9 +271,7 @@ const lbProblem = () => lbMsg ? `<p class="lb-note lb-problem" role="alert">${lb
 
 const LB_VIEWS = {
   everyone() {
-    const note = !lbName() ? '<p class="lb-note lb-banner">Finish a game and post your score to get on the board.</p>'
-      : lbGroupsOnly() ? '<p class="lb-note lb-banner">You’re only showing in your groups, so you’re not on this board. <button class="lb-link" type="button" data-act="showMe">Show me here too</button></p>'
-      : '';
+    const note = lbName() ? '' : '<p class="lb-note lb-banner">Finish a game and post your score to get on the board.</p>';
     return lbSeg() + note + '<ol class="lb-list" id="lbList"></ol><p class="lb-note" id="lbStatus" role="status">Loading…</p>'
       + '<p class="lb-note" id="lbShowHidden" hidden><button class="lb-link" type="button" data-act="unhide"></button></p>';
   },
@@ -290,7 +296,6 @@ const LB_VIEWS = {
       + '<button class="btn btn-big lb-wide" type="button" data-view="invite">Invite friends</button>'
       + '<ol class="lb-list" id="lbList"></ol><p class="lb-note" id="lbStatus" role="status">Loading…</p>'
       + '<p class="lb-note" id="lbShowHidden" hidden><button class="lb-link" type="button" data-act="unhide"></button></p>'
-      + '<p class="lb-note">Scores here count from the day each person joined.</p>'
       + '<button class="lb-link lb-quiet" type="button" data-view="leave">Leave group</button>';
   },
   new() {
@@ -308,8 +313,8 @@ const LB_VIEWS = {
     if (!g) return LB_VIEWS.groups();
     return `<h3 class="lb-h">Leave ${lbEsc(g.name)}?</h3>`
       + '<p class="lb-note">Your scores in this group go away. You can join again with the link, starting fresh.</p>' + lbProblem()
-      + '<div class="btn-row"><button class="btn btn-big btn-secondary" type="button" data-view="group">Stay</button>'
-      + '<button class="btn btn-big" type="button" data-act="leave">Leave group</button></div>';
+      + '<button class="btn btn-big lb-wide" type="button" data-act="leave">Leave group</button>'
+      + '<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="group">Stay</button>';
   },
   code() {
     return lbBack('groups', 'My groups') + '<h3 class="lb-h">Join a group</h3>'
@@ -332,16 +337,16 @@ const LB_VIEWS = {
       + '<form class="lb-stack" data-form="rename"><label class="lb-label" for="lbRename">Your name</label>'
       + `<div class="lb-form"><input class="lb-input" id="lbRename" maxlength="20" value="${lbEsc(lbName())}" autocomplete="nickname" enterkeyhint="done">`
       + '<button class="btn lb-save" type="submit">Save</button></div></form>' + lbProblem()
-      + `<span class="lb-label">Where your scores show</span>${lbVisPicker('lbMeVis')}`
-      + '<p class="lb-note">With “Only my groups” you can still look at the Everyone board. You just won’t be on it.</p>'
+      + '<p class="lb-note">After each game you choose which boards to post to: Everyone, your groups, or both.</p>'
       + '<p class="lb-note" id="lbHeldNote" hidden>Your name was reported, so others see “Picnic Player” until it’s reviewed.</p>'
+      + `<p class="lb-note">Names and scores are visible to other players. <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`
       + '<button class="lb-link lb-quiet" type="button" data-view="remove">Remove me from the leaderboard</button>';
   },
   remove() {
     return '<h3 class="lb-h">Remove me?</h3>'
       + '<p class="lb-note">Your name and scores come off every board, and you leave your groups.</p>' + lbProblem()
-      + '<div class="btn-row"><button class="btn btn-big btn-secondary" type="button" data-view="me">Keep me</button>'
-      + '<button class="btn btn-big" type="button" data-act="remove">Remove me</button></div>';
+      + '<button class="btn btn-big lb-wide" type="button" data-act="remove">Remove me</button>'
+      + '<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="me">Keep me</button>';
   },
 };
 function lbSeg() {
@@ -358,10 +363,11 @@ function lbShareView(title, fresh) {
     + `<h3 class="lb-h">${lbEsc(title)}</h3>`
     + (fresh ? `<p class="lb-note"><b>${lbEsc(g.name)}</b> · send this link so friends can join.</p>` : '')
     + `<p class="lb-linkbox" id="lbLinkText">${lbEsc(lbInviteURL(g).replace(/^https?:\/\//, ''))}</p>`
-    + '<div class="btn-row"><button class="btn btn-big btn-secondary" type="button" data-act="copy">Copy link</button>'
-    + (navigator.share ? '<button class="btn btn-big" type="button" data-act="share">Share…</button>' : '') + '</div>'
-    + `<p class="lb-note">Friends tap the link to join, or type the code <b>${lbEsc(g.code)}</b> under “Have a code?”.</p>`
-    + `<button class="${fresh ? 'btn btn-big lb-wide' : 'lb-link'}" type="button" data-view="group">Done</button>`;
+    // Share is the main button where the phone has it; Copy link otherwise
+    + (navigator.share ? '<button class="btn btn-big lb-wide" type="button" data-act="share">Share link…</button>' : '')
+    + `<button class="btn btn-big lb-wide${navigator.share ? ' btn-quiet' : ''}" type="button" data-act="copy">Copy link</button>`
+    + `<p class="lb-note">Friends tap the link to join. Or they can enter the code <b>${lbEsc(g.code)}</b>.</p>`
+    + `<button class="lb-link" type="button" data-view="group">${fresh ? 'Done, go to the group' : 'Done'}</button>`;
 }
 
 function lbRender() {
@@ -370,7 +376,6 @@ function lbRender() {
   const boards = v === 'everyone' || v === 'groups' || v === 'group';
   $lb('lbFoot').hidden = !boards || !lbName();
   $lb('lbMeName').textContent = lbName();
-  $lb('lbMeVis').textContent = lbGroupsOnly() ? 'only in my groups' : 'shown to everyone';
   $lb('lbFlash').hidden = true;
   $lb('lbClose').hidden = !boards;
   const content = $lb('leaderboard').querySelector('.leaderboard-content');
@@ -379,7 +384,7 @@ function lbRender() {
   if (v === 'group') lbFillBoard(lbGroupCode);
   if (v === 'groups') lbRefreshGroups();
   if (v === 'me') lbCheckHeld();
-  const first = $lb('lbView').querySelector('input:not([type="radio"])');
+  const first = $lb('lbView').querySelector('.lb-input');
   if (first && (v === 'new' || v === 'code')) first.focus();
 }
 // Switch view. Opens the panel if it's closed.
@@ -619,7 +624,7 @@ async function lbJoinFromLink() {
   catch (err) { lbMsg = lbGroupError(err); lbRender(); }
 }
 
-// ── Your name and where your scores show ──
+// ── Your name, and removing yourself ──
 async function lbRename(form) {
   const name = tidyName(form.querySelector('#lbRename').value);
   if (!name || name === lbName()) return;
@@ -636,14 +641,6 @@ async function lbRename(form) {
   }
   lbFlash('Name saved.');
 }
-async function lbChangeVis(groupsOnly) {
-  const old = lbGroupsOnly();
-  lbSetGroupsOnly(groupsOnly);
-  try { await lbSavePlayer(); }
-  catch (_) { lbSetGroupsOnly(old); lbMsg = LB_OFFLINE; lbRender(); return; }
-  if (lbView !== 'me') lbRender();   // the Everyone board changes; the choice itself is already showing on "me"
-  lbFlash(groupsOnly ? 'Now only your groups see your scores.' : 'Now everyone sees your best score.');
-}
 async function lbRemoveMe() {
   try {
     await lbRemove();
@@ -651,7 +648,6 @@ async function lbRemoveMe() {
   // Forget the name, groups and any unsent score so nothing gets posted
   // again until the player chooses to post a new one
   lbStore.set('fruitpicnic.lbName', null);
-  lbStore.set('fruitpicnic.lbVis', null);
   lbStore.set('fruitpicnic.lbPending', null);
   lbSetGroups([]);
   lbShow('everyone');
@@ -670,7 +666,6 @@ if (lbOn) {
     if (t.dataset.view) return lbShow(t.dataset.view);
     if (t.dataset.group) return lbShow('group', t.dataset.group);
     switch (t.dataset.act) {
-      case 'showMe': return lbChangeVis(false);
       case 'unhide': lbSetHidden(new Set()); return lbRender();
       case 'copy': return lbCopyLink();
       case 'share': return lbShareLink();
@@ -690,9 +685,6 @@ if (lbOn) {
       if (!code) { input.focus(); return; }
       lbFindGroup(code).catch(err => lbFormProblem(form, lbGroupError(err)));
     }
-  });
-  panel.addEventListener('change', e => {
-    if (e.target.name === 'lbMeVis') lbChangeVis(e.target.value === 'groups');
   });
   lbFlush().catch(() => {});
   window.addEventListener('online', () => lbFlush().catch(() => {}));

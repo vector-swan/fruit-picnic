@@ -197,8 +197,9 @@ begin
 end;
 $$;
 
--- Saves a player's name and where their scores show, before or between games
--- (when they first join or start a group, or change it on the leaderboard).
+-- Saves a player's name before or between games (when they first join or start
+-- a group, or change it on the leaderboard). p_groups_only is only for older
+-- versions of the game; null leaves it as it is.
 -- A player with no games yet is kept with a score of 0, which no board shows,
 -- so their name can appear in a group as "no score yet".
 create or replace function public.save_player(p_player uuid, p_name text, p_groups_only boolean)
@@ -217,7 +218,7 @@ begin
   on conflict (player_id) do update set
     hidden      = scores.hidden and scores.name = excluded.name,
     name        = excluded.name,
-    groups_only = excluded.groups_only;
+    groups_only = coalesce(p_groups_only, scores.groups_only);
 end;
 $$;
 
@@ -272,36 +273,64 @@ as $$
   limit 50;
 $$;
 
--- Save a finished game and say where it landed: the place on Everyone (null
--- for "only my groups") and on each group, with whether it was a new best there.
-create or replace function public.post_score(p_player uuid, p_name text, p_score integer, p_tile integer, p_groups_only boolean)
+-- Save a finished game on the boards the player ticked: Everyone (p_everyone)
+-- and any of their groups (p_groups, by code). Each board keeps the player's
+-- best. Says where it landed: the place on Everyone (null if not posted there)
+-- and on each ticked group, with whether it was a new best there.
+drop function if exists public.post_score(uuid, text, integer, integer, boolean);
+create or replace function public.post_score(p_player uuid, p_name text, p_score integer, p_tile integer, p_everyone boolean, p_groups text[])
 returns json
 language plpgsql security definer
 set search_path = public
 as $$
 declare
-  v_was     integer;
-  v_better  uuid[];
-  v_me      scores;
+  v_name   text := tidy_name(p_name);
+  v_codes  text[] := (select coalesce(array_agg(upper(c)), '{}') from unnest(coalesce(p_groups, '{}')) c);
+  v_was    integer;
+  v_better uuid[];
+  v_me     scores;
 begin
+  if p_player is null or p_score is null or p_score < 0 or p_score > 4000000
+     or p_tile is null or p_tile < 2 or p_tile > 131072 or (p_tile & (p_tile - 1)) <> 0 then
+    raise exception 'That score doesn''t look right';
+  end if;
+  if not name_allowed(v_name, 20) then raise exception 'name_not_allowed'; end if;
+
+  -- A new name gets a fresh start, so someone reported unfairly can fix it
+  delete from reports where target = (select public_id from scores where player_id = p_player and name <> v_name);
   select score into v_was from scores where player_id = p_player;
-  select coalesce(array_agg(group_id), '{}') into v_better
-    from group_members where player_id = p_player and best < p_score;
-  perform submit_score(p_player, p_name, p_score, p_tile);
-  update scores set groups_only = coalesce(p_groups_only, false) where player_id = p_player
-    returning * into v_me;
+
+  -- Everyone: keep the best when ticked; otherwise just keep the name up to date
+  insert into scores (player_id, name, score, top_tile)
+  values (p_player, v_name, case when p_everyone then p_score else 0 end, case when p_everyone then p_tile else 2 end)
+  on conflict (player_id) do update set
+    hidden      = scores.hidden and scores.name = excluded.name,
+    name        = excluded.name,
+    groups_only = case when p_everyone then false else scores.groups_only end,
+    score       = greatest(scores.score, excluded.score),
+    top_tile    = greatest(scores.top_tile, excluded.top_tile),
+    updated_at  = case when excluded.score > scores.score then now() else scores.updated_at end;
+
+  -- The ticked groups the player is in
+  select coalesce(array_agg(m.group_id), '{}') into v_better
+    from group_members m join groups g on g.id = m.group_id
+    where m.player_id = p_player and g.code = any(v_codes) and m.best < p_score;
+  update group_members set best = p_score, best_at = now() where player_id = p_player and group_id = any(v_better);
+
+  select * into v_me from scores where player_id = p_player;
   return json_build_object(
-    'everyone', case when v_me.groups_only then null else (
+    'everyone', case when p_everyone and not v_me.groups_only then (
       select count(*) + 1 from scores o
-      where not o.groups_only and (o.score > v_me.score or (o.score = v_me.score and o.updated_at < v_me.updated_at))) end,
-    'everyone_best', coalesce(v_was, 0) < p_score,
+      where not o.groups_only and o.score > 0
+        and (o.score > v_me.score or (o.score = v_me.score and o.updated_at < v_me.updated_at))) end,
+    'everyone_best', p_everyone and coalesce(v_was, 0) < p_score,
     'groups', coalesce((
       select json_agg(json_build_object(
                'code', g.code, 'name', g.name, 'place', group_place(g.id, p_player),
                'players', (select count(*) from group_members o where o.group_id = g.id),
                'best', g.id = any(v_better)) order by m.joined_at)
       from group_members m join groups g on g.id = m.group_id
-      where m.player_id = p_player), '[]'::json));
+      where m.player_id = p_player and g.code = any(v_codes)), '[]'::json));
 end;
 $$;
 
@@ -475,7 +504,7 @@ begin
     'check_name(text)', 'submit_score(uuid, text, integer, integer)', 'leaderboard(uuid, text, integer, boolean)',
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
     'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
-    'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean)',
+    'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean, text[])',
     'group_list(uuid)', 'group_board(uuid, text)']
   loop
     execute format('revoke all on function public.%s from public', f);
@@ -484,7 +513,7 @@ begin
     'check_name(text)', 'submit_score(uuid, text, integer, integer)', 'leaderboard(uuid, text, integer, boolean)',
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
     'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
-    'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean)',
+    'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean, text[])',
     'group_list(uuid)', 'group_board(uuid, text)']
   loop
     execute format('grant execute on function public.%s to anon, authenticated', f);
