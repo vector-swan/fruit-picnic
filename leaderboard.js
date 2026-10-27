@@ -466,7 +466,8 @@ async function lbFillBoard(code) {
       if (r.me) li.className = 'me';
       const none = !r.score;
       // No top-tile picture: it would spoil the bigger tiles for newer players
-      li.innerHTML = `<span class="lb-rank">${none ? '–' : r.place}</span><span class="lb-name"></span>`
+      const medal = !none && r.place <= 3 ? ` lb-medal-${r.place}` : '';
+      li.innerHTML = `<span class="lb-rank${medal}">${none ? '–' : r.place}</span><span class="lb-name"></span>`
         + `<span class="lb-score${none ? ' lb-none' : ''}">${none ? (r.me ? 'Your next game counts' : 'No score yet') : lbNum(r.score)}</span>`;
       li.querySelector('.lb-name').textContent = r.name + (r.me ? ' (you)' : '');
       if (!r.me) {

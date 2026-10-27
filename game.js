@@ -778,15 +778,32 @@ function tilePop(r, c, points) {
 function updateScore(add) {
   score += add;
   const el = document.getElementById('score');
-  el.textContent = score;
+  tweenNumber(el, score);
   el.classList.remove('score-bump');
   void el.offsetWidth;
   el.classList.add('score-bump');
   if (score > best) {
     best = score;
     localStorage.setItem('fruitpicnic.best', best);
-    document.getElementById('best').textContent = best;
+    document.getElementById('best').textContent = Number(best).toLocaleString();
   }
+}
+// Counts a number up to its new value over a third of a second (jumps straight
+// there when the phone asks for less motion)
+const tweens = new WeakMap();
+function tweenNumber(el, to) {
+  const from = tweens.get(el)?.value ?? (parseInt(el.textContent.replace(/\D/g, ''), 10) || 0);
+  cancelAnimationFrame(tweens.get(el)?.raf);
+  if (to <= from || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = to.toLocaleString(); tweens.set(el, { value: to }); return; }
+  const t0 = performance.now(), state = { value: from };
+  const tick = now => {
+    const k = Math.min(1, (now - t0) / 320), eased = 1 - Math.pow(1 - k, 3);
+    state.value = Math.round(from + (to - from) * eased);
+    el.textContent = state.value.toLocaleString();
+    if (k < 1) state.raf = requestAnimationFrame(tick);
+  };
+  state.raf = requestAnimationFrame(tick);
+  tweens.set(el, state);
 }
 
 // ── Overlays ──────────────────────────────────────────────────────────────────
@@ -990,7 +1007,7 @@ document.getElementById('settings').addEventListener('click', e => { if (e.targe
 document.addEventListener('keydown', e => { if (settingsOpen && e.key === 'Escape') closeSettings(); });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-document.getElementById('best').textContent = best;
+document.getElementById('best').textContent = Number(best).toLocaleString();
 fitBoard();
 syncArtAspect();
 applyTheme(themeId);

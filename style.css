@@ -881,3 +881,118 @@ html[data-skin="night"] .lb-place b { color: var(--text-dark); }
 .lb-actions { display: flex; width: 100%; }
 .lb-actions #lbMain { display: contents; }
 .lb-actions .btn { flex: 1; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Polish pass. A small token set (four radii, one hard shadow for pressable
+   things, three surface fills, three type weights), one stitch per screen,
+   a quieter header, and iPhone-style bottom sheets instead of centred cards.
+   Appended last so it overrides the older rules above.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --r-s: 10px; --r-m: 14px; --r-l: 20px;
+  --card: #FBF4EA;                                              /* a quiet fill for rows and cards */
+  --tint: color-mix(in srgb, var(--accent-text) 11%, transparent); /* your row, a selected chip */
+  --outline: #F0DDD0;
+  --sheet: #FFFFFF;
+  --grab: #E8D5C4;
+}
+html[data-skin="night"]     { --card: rgba(255, 255, 255, 0.06); --outline: #5A3E35; --sheet: #3A2621; --grab: #6B4338; }
+html[data-skin="halloween"] { --card: rgba(255, 255, 255, 0.06); --outline: #4A3A6A; --sheet: #2C2148; --grab: #5A4A80; }
+
+/* Type: body 600, labels 700, titles and scores 800 */
+.hint, .lb-note, .lb-list li, .step .txt, .celebration-content p, .gameover-content p, .lb-gtext small, .lb-gplace, .foot { font-weight: 600; }
+.lb-list li.me, .lb-list li.me .lb-name { font-weight: 800; }
+.lb-label, .lb-check span, .set-label { font-weight: 700; }
+
+/* Header: no title shadow, scores as quiet stat blocks, one strawberry button, cream icon buttons */
+h1 { text-shadow: none; }
+.subtitle { display: none; }
+.title-row { align-items: flex-start; }
+.scores { gap: 18px; }
+.score-box { background: none; border: none; padding: 0; min-width: 0; text-align: right; }
+.score-label { font-size: 0.66rem; letter-spacing: 0.12em; color: var(--muted); }
+.score-value { font-size: 1.4rem; line-height: 1.05; }
+.controls { align-items: center; }
+#boardBtn { margin-left: auto; }
+.controls .btn-icon { width: 44px; height: 44px; padding: 0; border-radius: var(--r-m); }
+#boardBtn, #settingsBtn { --b: #FFFFFF; --bd: var(--tray-edge); }
+.controls .btn-icon svg { stroke: var(--text-dark); }
+.controls .btn-icon svg [fill="#FFFDF8"] { fill: var(--mustard); }
+html[data-skin="night"] #boardBtn, html[data-skin="night"] #settingsBtn { --b: #3A2621; --bd: #1C110E; }
+html[data-skin="halloween"] #boardBtn, html[data-skin="halloween"] #settingsBtn { --b: #2C2148; --bd: #170F2A; }
+html[data-skin="night"] .controls .btn-icon svg { stroke: #FBE9DC; }
+html[data-skin="halloween"] .controls .btn-icon svg { stroke: #F3E8FF; }
+html[data-skin="halloween"] .controls .btn-icon svg [fill="#FFFDF8"] { fill: #FFA24A; }
+.btn { border-radius: 999px; }
+.board { border-radius: var(--r-l); }
+
+/* Bottom sheets. The dimmed board shows behind; the sheet slides up with a little overshoot. */
+.celebration, .gameover, .leaderboard, .howto, .settings {
+  align-items: flex-end; background: rgba(122, 59, 46, 0.32); backdrop-filter: blur(3px);
+}
+html[data-skin="night"] .celebration, html[data-skin="night"] .gameover, html[data-skin="night"] .leaderboard, html[data-skin="night"] .howto, html[data-skin="night"] .settings,
+html[data-skin="halloween"] .celebration, html[data-skin="halloween"] .gameover, html[data-skin="halloween"] .leaderboard, html[data-skin="halloween"] .howto, html[data-skin="halloween"] .settings { background: rgba(0, 0, 0, 0.45); }
+.celebration-content, .gameover-content, .leaderboard-content, .howto-content, .settings-content {
+  width: 100%; max-width: 560px; border: none; border-radius: 28px 28px 0 0;
+  padding: 10px 18px calc(22px + env(safe-area-inset-bottom)); gap: 12px;
+  background: var(--sheet);
+  box-shadow: 0 -8px 30px rgba(60, 25, 15, 0.18);
+  max-height: calc(100dvh - env(safe-area-inset-top) - 40px); overflow-y: auto;
+  transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.2, 0.9, 0.3, 1.08);
+}
+.show > .celebration-content, .show > .gameover-content, .show > .leaderboard-content, .show > .howto-content, .show > .settings-content { transform: none; }
+.leaderboard-content { height: calc(100dvh - env(safe-area-inset-top) - 44px); overflow: hidden; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: var(--grab); align-self: center; flex: none; }
+.lb-top { margin-top: -4px; }
+
+/* Win and game-over sheets: smaller basket, two stats side by side with no boxes, chips for "Post to" */
+.basket-art { width: 92px; height: 92px; }
+.big-emoji { animation-iteration-count: 3; }
+.final-stats { grid-template-columns: 1fr 1fr; width: min(100%, 300px); position: relative; margin: 0 auto; }
+.final-stats::before { content: ""; position: absolute; left: 50%; top: 18%; bottom: 18%; width: 2px; border-radius: 1px; background: var(--outline); }
+.stat { flex-direction: column; align-items: center; gap: 4px; padding: 4px; border: none; background: none; text-align: center; }
+.stat > div { text-align: center; }
+.stat-icon { width: 36px; height: 36px; border-radius: 9px; }
+.stat-star { font-size: 20px; }
+.stat-value { font-size: 1.3rem; color: var(--text-dark); }
+html[data-skin="night"] .stat, html[data-skin="halloween"] .stat { background: none; }
+.lb-post { width: 100%; max-width: 320px; }
+.lb-checks { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.lb-check {
+  position: relative; width: auto; min-height: 40px; padding: 0 14px; gap: 6px; align-items: center;
+  border: 2px solid var(--outline); border-radius: 999px; background: transparent;
+}
+.lb-check input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.lb-check:has(input:checked) { border-color: transparent; background: var(--tint); }
+.lb-check:has(input:checked) span { color: var(--accent-text); font-weight: 800; }
+.lb-check:has(input:checked)::before { content: "✓"; font-size: 13px; font-weight: 800; color: var(--accent-text); }
+.lb-check:has(input:focus-visible) { outline: 3px solid var(--text-dark); outline-offset: 2px; }
+.gameover .btn-big.btn-quiet, .celebration .btn-big.btn-quiet { background: none; border: none; box-shadow: none; color: var(--accent-text); min-height: 44px; padding: 0 16px; }
+
+/* Surfaces: one stitch per screen, so the dashed borders go */
+.lb-input { border: 2px solid var(--outline); border-radius: var(--r-m); background: #fff; }
+.lb-banner, .lb-empty, .lb-you, .lb-gcard, .step, .set-row, .theme-opt, .lb-list li { border: none; background: var(--card); border-radius: var(--r-m); }
+.lb-linkbox { border: 2px solid var(--outline); border-radius: var(--r-m); background: var(--card); }
+.lb-place { border-radius: var(--r-s); }
+.lb-seg { border-radius: var(--r-m); }
+.lb-seg button { border-radius: var(--r-s); }
+.theme-opt { border: 3px solid transparent; }
+.theme-opt[aria-checked="true"] { border-color: var(--accent-text); background: var(--tint); }
+.lb-list li.me { background: var(--tint); }
+.lb-list li.lb-acts, .lb-list li.lb-gap { background: none; }
+html[data-skin="night"] .lb-input, html[data-skin="halloween"] .lb-input { background: rgba(255, 255, 255, 0.08); }
+html[data-skin="night"] .lb-list li.me, html[data-skin="night"] .theme-opt[aria-checked="true"] { background: rgba(255, 122, 149, 0.2); }
+html[data-skin="halloween"] .lb-list li.me, html[data-skin="halloween"] .theme-opt[aria-checked="true"] { background: rgba(255, 138, 42, 0.2); }
+
+/* Medals for the top three */
+.lb-list li .lb-rank { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; flex: none; color: var(--muted); }
+.lb-list li.me .lb-rank { color: var(--text-dark); }
+.lb-rank.lb-medal-1 { background: #F5C044; color: #5A3A00 !important; }
+.lb-rank.lb-medal-2 { background: #D7DBE3; color: #3B4150 !important; }
+.lb-rank.lb-medal-3 { background: #DDA66B; color: #4A2A0A !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .celebration-content, .gameover-content, .leaderboard-content, .howto-content, .settings-content { transition: none; }
+  .big-emoji { animation: none; }
+}
