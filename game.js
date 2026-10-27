@@ -822,7 +822,9 @@ function showGameOver() {
 function hideGameOver() { document.getElementById('gameover').classList.remove('show'); }
 
 // ── New game ──────────────────────────────────────────────────────────────────
+let updateWaiting = false;   // set when a new version of the game has arrived (see the end of this file)
 function newGame() {
+  if (updateWaiting) { location.reload(); return; }
   hideCelebration(); hideGameOver();
   if (typeof tutorialHide === 'function') tutorialHide();
   liveTiles.forEach(t => t.el.remove());
@@ -1055,5 +1057,15 @@ window.addEventListener('hashchange', () => { if (location.hash === '#almost-win
 // Installable app: keep a copy on the phone so it works offline
 // (not needed in the iPhone app, which already has everything built in)
 if (!native && 'serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    // A tab left open for days: look for a new version whenever it comes back
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+  }).catch(() => {});
+  // When a new version has arrived, switch to it at the next New game, so
+  // nobody loses a board they're in the middle of
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) updateWaiting = true;
+    hadController = true;
+  });
 }
