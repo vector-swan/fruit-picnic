@@ -339,13 +339,13 @@ const LB_VIEWS = {
       + '<button class="btn lb-save" type="submit">Save</button></div></form>' + lbProblem()
       + '<p class="lb-note" id="lbHeldNote" hidden>Reported: others see “Picnic Player” for now.</p>'
       + `<p class="lb-note">Visible to other players · <a class="lb-link" href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`
-      + '<button class="lb-link lb-quiet" type="button" data-view="remove">Remove me from the leaderboard</button>';
+      + '<button class="lb-link lb-quiet" type="button" data-view="remove">Remove my score</button>';
   },
   remove() {
-    return '<h3 class="lb-h">Remove me?</h3>'
-      + '<p class="lb-note">Deletes your name, scores and groups.</p>' + lbProblem()
-      + '<button class="btn btn-big lb-wide" type="button" data-act="remove">Remove me</button>'
-      + '<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="me">Keep me</button>';
+    return '<h3 class="lb-h">Remove my score?</h3>'
+      + '<p class="lb-note">Takes your name and scores off every board and leaves your groups. You can post again any time.</p>' + lbProblem()
+      + '<button class="btn btn-big lb-wide" type="button" data-act="remove">Remove my score</button>'
+      + `<button class="btn btn-big btn-quiet lb-wide" type="button" data-view="${lbTab}">Keep my score</button>`;
   },
 };
 // Each board's main action, pinned to the bottom of the panel
@@ -469,14 +469,13 @@ async function lbFillBoard(code) {
       li.innerHTML = `<span class="lb-rank${medal}">${none ? '–' : r.place}</span><span class="lb-name"></span>`
         + `<span class="lb-score${none ? ' lb-none' : ''}">${none ? (r.me ? 'Your next game counts' : 'No score yet') : lbNum(r.score)}</span>`;
       li.querySelector('.lb-name').textContent = r.name + (r.me ? ' (you)' : '');
-      if (!r.me) {
-        // Tap someone else's name to hide or report it
-        li.tabIndex = 0;
-        li.setAttribute('role', 'button');
-        li.setAttribute('aria-label', `${r.name}, ${none ? 'no score yet' : r.score + ' points'}. Hide or report`);
-        li.addEventListener('click', () => lbToggleActions(li, r));
-        li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lbToggleActions(li, r); } });
-      }
+      // Tap someone else's name to hide or report it, or your own to rename or remove it
+      li.tabIndex = 0;
+      li.setAttribute('role', 'button');
+      li.setAttribute('aria-label', r.me ? `You, ${none ? 'no score yet' : r.score + ' points'}. Change username or remove your score`
+        : `${r.name}, ${none ? 'no score yet' : r.score + ' points'}. Hide or report`);
+      li.addEventListener('click', () => lbToggleActions(li, r));
+      li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lbToggleActions(li, r); } });
       items.push(li);
     });
     list.replaceChildren(...items);
@@ -494,13 +493,19 @@ async function lbCheckHeld() {
   } catch (_) {}
 }
 
-// The Hide / Report buttons under a tapped name
+// The Hide / Report buttons under a tapped name (Change username / Remove my
+// score under your own)
 function lbToggleActions(li, r) {
   const open = li.nextElementSibling && li.nextElementSibling.classList.contains('lb-acts');
   $lb('lbList').querySelectorAll('.lb-acts').forEach(el => el.remove());
   if (open) return;
   const acts = document.createElement('li');
   acts.className = 'lb-acts';
+  if (r.me) {
+    acts.innerHTML = '<button class="lb-link" type="button" data-view="me">Change username</button><button class="lb-link" type="button" data-view="remove">Remove my score</button>';
+    li.after(acts);
+    return;
+  }
   acts.innerHTML = '<button class="lb-link" type="button" data-act="hide">Hide this player</button><button class="lb-link" type="button" data-act="report">Report name</button>';
   acts.querySelector('[data-act="hide"]').addEventListener('click', e => {
     e.stopPropagation();
@@ -537,15 +542,24 @@ const GROUP_ERRORS = {
 };
 const lbGroupError = e => GROUP_ERRORS[e.message] || LB_OFFLINE;
 // Quietly bring the saved group list up to date with the database
-// This phone used to play on the old github.io address under another player id
-// (see the top of game.js): fold that id into this one so the player shows up
-// once, with their better score and all their groups. Kept until it works.
+// Keep each person to one row on the leaderboard:
+// - this phone used to play on the old github.io address under another player
+//   id (see the top of game.js): fold that id into this one, with the better
+//   score and all the groups. Kept until it works.
+// - this phone's id was folded into another one (say on another phone, or by
+//   the same-name clean-up): switch to the kept id so it doesn't come back.
 async function lbMerge() {
   const old = lbStore.get('fruitpicnic.lbMerge');
-  if (!old) return;
-  await lbRpc('merge_player', { p_keep: lbPlayerId(), p_old: old });
-  lbStore.set('fruitpicnic.lbMerge', null);
-  lbRefreshGroups();
+  if (old) {
+    await lbRpc('merge_player', { p_keep: lbPlayerId(), p_old: old });
+    lbStore.set('fruitpicnic.lbMerge', null);
+    lbRefreshGroups();
+  }
+  const keep = await lbRpc('resolve_player', { p_player: lbPlayerId() });
+  if (keep && keep !== lbPlayerId()) {
+    lbStore.set('fruitpicnic.lbId', keep);
+    lbRefreshGroups();
+  }
 }
 async function lbRefreshGroups() {
   try {

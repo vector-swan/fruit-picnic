@@ -77,6 +77,15 @@ begin
 end;
 $$;
 
+-- When two player ids are joined into one (merge_player), the old id points at
+-- the one that was kept, so a phone still using the old id switches over the
+-- next time it opens the game instead of showing up twice again.
+create table if not exists public.player_aliases (
+  old_id    uuid primary key,
+  keep_id   uuid not null,
+  merged_at timestamptz not null default now()
+);
+
 -- Lock the tables: the game only gets in through the functions below.
 -- (You can still see and edit everything in Supabase's Table Editor.)
 alter table public.scores        enable row level security;
@@ -84,9 +93,10 @@ alter table public.blocked_words enable row level security;
 alter table public.reports       enable row level security;
 alter table public.groups        enable row level security;
 alter table public.group_members enable row level security;
+alter table public.player_aliases enable row level security;
 drop policy if exists "Anyone can read the leaderboard" on public.scores;
-revoke all on public.scores, public.blocked_words, public.reports, public.groups, public.group_members
-  from anon, authenticated;
+revoke all on public.scores, public.blocked_words, public.reports, public.groups, public.group_members,
+  public.player_aliases from anon, authenticated;
 
 -- ── The starting word list ────────────────────────────────────────────────────
 insert into public.blocked_words (word, match) values
@@ -403,6 +413,7 @@ as $$
   delete from group_members where player_id = p_player;
   update groups set created_by = null where created_by = p_player;
   delete from scores where player_id = p_player;
+  delete from player_aliases where keep_id = p_player or old_id = p_player;
 $$;
 
 -- Join two player ids that belong to the same person into one (p_keep stays).
@@ -445,7 +456,22 @@ begin
   update group_members set player_id = p_keep where player_id = p_old;
   update groups set created_by = p_keep where created_by = p_old;
   delete from reports where reporter = p_old;
+  -- leave a pointer for any phone still using the old id (and anything that pointed at it)
+  update player_aliases set keep_id = p_keep where keep_id = p_old;
+  delete from player_aliases where old_id = p_keep;
+  insert into player_aliases (old_id, keep_id) values (p_old, p_keep)
+    on conflict (old_id) do update set keep_id = excluded.keep_id, merged_at = now();
 end;
+$$;
+
+-- The id this phone should use: the kept id if this one was merged into
+-- another, otherwise null.
+create or replace function public.resolve_player(p_player uuid)
+returns uuid
+language sql stable security definer
+set search_path = public
+as $$
+  select keep_id from player_aliases where old_id = p_player;
 $$;
 
 -- ── Groups ────────────────────────────────────────────────────────────────────
@@ -548,7 +574,7 @@ begin
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
     'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
     'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean, text[])',
-    'group_list(uuid)', 'group_board(uuid, text)', 'merge_player(uuid, uuid)']
+    'group_list(uuid)', 'group_board(uuid, text)', 'merge_player(uuid, uuid)', 'resolve_player(uuid)']
   loop
     execute format('revoke all on function public.%s from public', f);
   end loop;
@@ -557,7 +583,7 @@ begin
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
     'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
     'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean, text[])',
-    'group_list(uuid)', 'group_board(uuid, text)', 'merge_player(uuid, uuid)']
+    'group_list(uuid)', 'group_board(uuid, text)', 'merge_player(uuid, uuid)', 'resolve_player(uuid)']
   loop
     execute format('grant execute on function public.%s to anon, authenticated', f);
   end loop;
