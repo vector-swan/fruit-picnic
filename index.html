@@ -2,8 +2,23 @@
 <html lang="en">
 <head>
   <script>
-    // The game moved to fruitpicnic.io: send visitors of the old github.io address there
-    if (/\.github\.io$/.test(location.hostname)) location.replace('https://fruitpicnic.io/' + location.search + location.hash);
+    // The game moved to fruitpicnic.io: send visitors of the old github.io address
+    // there. Each website keeps its own storage, so bring the player's id, name,
+    // best score and settings along (fruitpicnic.io reads #move=…); otherwise
+    // they'd get a new player id there and show up twice on the leaderboard.
+    if (/\.github\.io$/.test(location.hostname)) {
+      var move = {};
+      try {
+        ['lbId', 'lbName', 'best', 'sound', 'theme', 'haptics', 'tutorial'].forEach(function (k) {
+          var v = localStorage.getItem('fruitpicnic.' + k);
+          if (v === null) v = localStorage.getItem('2048' + k);
+          if (v !== null) move[k] = v;
+        });
+      } catch (_) {}
+      var hash = location.hash.replace(/^#/, '');
+      if (move.lbId || move.best) hash = (hash ? hash + '&' : '') + 'move=' + encodeURIComponent(JSON.stringify(move));
+      location.replace('https://fruitpicnic.io/' + location.search + (hash ? '#' + hash : ''));
+    }
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
