@@ -537,6 +537,16 @@ const GROUP_ERRORS = {
 };
 const lbGroupError = e => GROUP_ERRORS[e.message] || LB_OFFLINE;
 // Quietly bring the saved group list up to date with the database
+// This phone used to play on the old github.io address under another player id
+// (see the top of game.js): fold that id into this one so the player shows up
+// once, with their better score and all their groups. Kept until it works.
+async function lbMerge() {
+  const old = lbStore.get('fruitpicnic.lbMerge');
+  if (!old) return;
+  await lbRpc('merge_player', { p_keep: lbPlayerId(), p_old: old });
+  lbStore.set('fruitpicnic.lbMerge', null);
+  lbRefreshGroups();
+}
 async function lbRefreshGroups() {
   try {
     const groups = await lbRpc('group_list', { p_player: lbPlayerId() });
@@ -699,7 +709,7 @@ if (lbOn) {
       lbFindGroup(code).catch(err => lbFormProblem(form, lbGroupError(err)));
     }
   });
-  lbFlush().catch(() => {});
-  window.addEventListener('online', () => lbFlush().catch(() => {}));
+  lbMerge().catch(() => {}).then(() => lbFlush()).catch(() => {});
+  window.addEventListener('online', () => lbMerge().catch(() => {}).then(() => lbFlush()).catch(() => {}));
   lbJoinFromLink();
 }

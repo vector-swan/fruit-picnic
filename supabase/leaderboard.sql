@@ -405,6 +405,49 @@ as $$
   delete from scores where player_id = p_player;
 $$;
 
+-- Join two player ids that belong to the same person into one (p_keep stays).
+-- Used when someone moves from the old github.io address, where their phone
+-- had a different id: the better score and every group they were in carry
+-- over, and the old row goes away so they don't show up twice. Only the
+-- person's own phone knows both ids.
+create or replace function public.merge_player(p_keep uuid, p_old uuid)
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+declare o scores%rowtype;
+begin
+  if p_keep is null or p_old is null or p_keep = p_old then return; end if;
+  select * into o from scores where player_id = p_old;
+  if found then
+    if exists (select 1 from scores where player_id = p_keep) then
+      update scores k set
+        score = greatest(k.score, o.score),
+        top_tile = greatest(k.top_tile, o.top_tile),
+        updated_at = case when o.score > k.score then o.updated_at else k.updated_at end,
+        groups_only = k.groups_only and o.groups_only
+      where k.player_id = p_keep;
+      delete from reports where target = o.public_id;
+      delete from scores where player_id = p_old;
+    else
+      update scores set player_id = p_keep where player_id = p_old;
+    end if;
+  end if;
+  -- groups both ids were in: keep the better best, then drop the old membership
+  update group_members k set
+    best = greatest(k.best, m.best),
+    best_at = case when m.best > k.best then m.best_at else k.best_at end,
+    joined_at = least(k.joined_at, m.joined_at)
+  from group_members m
+  where m.player_id = p_old and k.player_id = p_keep and k.group_id = m.group_id;
+  delete from group_members m where m.player_id = p_old
+    and exists (select 1 from group_members k where k.player_id = p_keep and k.group_id = m.group_id);
+  update group_members set player_id = p_keep where player_id = p_old;
+  update groups set created_by = p_keep where created_by = p_old;
+  delete from reports where reporter = p_old;
+end;
+$$;
+
 -- ── Groups ────────────────────────────────────────────────────────────────────
 -- Start a group. Returns its code and name. The player who starts it joins it.
 create or replace function public.create_group(p_player uuid, p_name text)
@@ -505,7 +548,7 @@ begin
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
     'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
     'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean, text[])',
-    'group_list(uuid)', 'group_board(uuid, text)']
+    'group_list(uuid)', 'group_board(uuid, text)', 'merge_player(uuid, uuid)']
   loop
     execute format('revoke all on function public.%s from public', f);
   end loop;
@@ -514,7 +557,7 @@ begin
     'report_name(uuid, uuid)', 'remove_score(uuid)', 'create_group(uuid, text)', 'find_group(text)',
     'join_group(uuid, text)', 'leave_group(uuid, text)', 'my_groups(uuid)',
     'save_player(uuid, text, boolean)', 'post_score(uuid, text, integer, integer, boolean, text[])',
-    'group_list(uuid)', 'group_board(uuid, text)']
+    'group_list(uuid)', 'group_board(uuid, text)', 'merge_player(uuid, uuid)']
   loop
     execute format('grant execute on function public.%s to anon, authenticated', f);
   end loop;

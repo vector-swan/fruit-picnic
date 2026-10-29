@@ -1,7 +1,7 @@
 // Offline support: keep a copy of the game on the phone so it opens without
 // internet. When online, the newest version is always loaded (and saved for
 // later); the saved copy is only used when the network is slow or missing.
-const CACHE = 'fruit-picnic-v56';
+const CACHE = 'fruit-picnic-v57';
 const NETWORK_WAIT_MS = 3000;   // after this long, fall back to the saved copy
 const FILES = [
   './', 'index.html', 'style.css', 'game.js', 'tiles.js', 'tutorial.js', 'leaderboard.js', 'privacy.html', 'manifest.webmanifest',

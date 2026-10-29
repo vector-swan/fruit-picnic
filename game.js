@@ -11,6 +11,26 @@ try {
   });
 } catch (_) {}
 
+// Players sent here from the old github.io address bring what that site saved
+// (it adds #move=… to the link). Each website keeps its own storage, so without
+// this they'd start over here with a new player id and show up twice on the
+// leaderboard. If this site already has an id, leaderboard.js asks the
+// database to join the two.
+try {
+  const m = location.hash.match(/[#&]move=([^&]*)/);
+  if (m) {
+    history.replaceState(null, '', location.pathname + location.search);
+    const old = JSON.parse(decodeURIComponent(m[1]));
+    const get = k => localStorage.getItem('fruitpicnic.' + k), set = (k, v) => localStorage.setItem('fruitpicnic.' + k, v);
+    if ((parseInt(old.best, 10) || 0) > (parseInt(get('best'), 10) || 0)) set('best', parseInt(old.best, 10));
+    ['sound', 'theme', 'haptics', 'tutorial', 'lbName'].forEach(k => { if (old[k] != null && get(k) === null) set(k, old[k]); });
+    if (/^[0-9a-f-]{36}$/i.test(old.lbId || '') && old.lbId !== get('lbId')) {
+      if (get('lbId') === null) set('lbId', old.lbId);
+      else set('lbMerge', old.lbId);
+    }
+  }
+} catch (_) {}
+
 // ── Audio ─────────────────────────────────────────────────────────────────────
 // Kalimba garden: a soft muted thump for every merge, and a short "climbing
 // phrase" the first time each new fruit appears (same shape, one step higher
